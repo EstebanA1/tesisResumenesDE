@@ -1,74 +1,149 @@
 :root {
-  font-family: Inter, Avenir, Helvetica, Arial, sans-serif;
-  font-size: 16px;
-  line-height: 24px;
-  font-weight: 400;
-
-  color-scheme: light dark;
-  color: rgba(255, 255, 255, 0.87);
-  background-color: #f9f9f9;
-
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  -webkit-text-size-adjust: 100%;
-}
-
-.app-container {
-  position: relative;
-  padding-top: 60px;
-  /* Ajusta este valor según el tamaño de tu título */
-}
-
-.app-container {
-  position: relative;
-  padding-top: 60px;
-  /* Ajusta este valor según el tamaño de tu título */
+  background-color: #0d1117;
 }
 
 .title-container {
-  position: fixed;
-  top: 50px;
-  /* Esto añade espacio hacia arriba */
-  left: 0;
-  right: 0;
-  /* Añadido para asegurar que el contenedor se centre correctamente */
-  width: 80%;
-  margin-left: auto;
-  /* Centra el contenedor horizontalmente */
-  margin-right: auto;
-  /* Centra el contenedor horizontalmente */
-  height: auto;
-  /* Permite que el contenedor ajuste su altura automáticamente */
-  min-height: 50px;
-  /* Asegura un mínimo de altura */
-  padding: 10px 20px;
-  /* Añade padding vertical para dar espacio a las letras y horizontal para los costados */
-  overflow: hidden;
-  /* Considera cambiar esto si deseas que el texto sobrepase el contenedor */
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 2.4em;
+  color: aliceblue;
   text-align: center;
-  /* white-space: nowrap; */
-  /* Removido para permitir múltiples líneas */
-  /* text-overflow: ellipsis; */
-  /* Puede ser removido ya que permitiremos múltiples líneas */
-  background-color: #f8f9fa;
-  /* Opcional: color de fondo para el título */
-  z-index: 1000;
-  /* Asegura que el título se muestre sobre el contenido */
-  line-height: 1.2;
-  /* Ajusta según sea necesario para dar espacio vertical al texto */
+  font-family: 'Trebuchet MS';
+  min-height: 150px;
+  padding: 20px;
+  box-sizing: border-box;
 }
 
+.title-container h1 {
+  max-width: 600px;
+  white-space: pre-wrap;
+}
+
+.big-container {
+  width: 90%;
+  margin: auto;
+  display: flex;
+  justify-content: space-between;
+}
 
 .etapas-container {
   height: 60vh;
+  width: 280px;
   display: flex;
   flex-direction: column;
-  width: 200px;
-  background-color: #0D1117;
-  justify-content: space-evenly; 
+  justify-content: space-evenly;
+}
+
+.dropzone-and-buttom {
+  display: flex;
+  align-items: center;
+  flex-direction: column;
+  align-content: flex-end;
+  justify-content: space-evenly;
+  width: 300px;
+}
+
+.dropzone {
+  border: 3px dashed #000000;
+  padding: 2rem;
+  background-color: #4a4a4a;
+  text-align: center;
+  transition: background-color 0.3s, border-color 0.3s;
   border-radius: 10px;
+  cursor: pointer;
+  color: aliceblue;
+  width: 100%; 
+}
+
+.beautiful-button {
+  position: relative;
+  display: inline-block;
+  background: linear-gradient(to bottom, #cdd5e2, #000000);
+  color: white;
+  font-family: "Segoe UI", sans-serif;
+  font-weight: bold;
+  font-size: 18px;
+  border: none;
+  border-radius: 30px;
+  padding: 14px 28px;
+  cursor: pointer;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+  animation: button-shimmer 2s infinite;
+  transition: all 0.3s ease-in-out;
+  margin-left: 4.7rem;
+}
+
+/* Hover animation */
+.beautiful-button:hover {
+  background: linear-gradient(to bottom, #2f81f7, #000000);
+  animation: button-particles 1s ease-in-out infinite;
+  transform: translateY(-2px);
+}
+
+/* Click animation */
+.beautiful-button:active {
+  transform: scale(0.95);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+}
+
+.preview-container {
+  text-align: center;
+  margin-right: 100px; 
+  width: 250px; 
+}
+
+.preview-container h4 {
+  margin: 0;
+  width: 100%;
+  font-size: 24px;
+  color: aliceblue;
+}
+
+.file-list {
+  color: aliceblue;
+  max-height: 400px;
+  overflow-y: auto;
+  padding-left: 10px;
+  padding-right: 10px;
+  scrollbar-width: thin; 
+  scrollbar-color: #888 #2b2b2b; 
+}
+
+
+.file-list li {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  margin: 10px 0;
+}
+
+.file-preview {
+  width: 50px;
+  height: 50px;
+  margin-right: 10px;
+  object-fit: cover;
+}
+
+.file-path {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: calc(100% - 70px);
+}
+
+.context-menu {
+  padding: 10px;
+  cursor: pointer;
+  border-radius: 3px;
+  list-style-type: none;
+  background-color: white;
+  border: 2px solid black;
+}
+
+.context-menu:hover {
+  background:#929090;
 }
 
 nav,
@@ -83,6 +158,7 @@ form {
     gap: 5px;
     cursor: pointer;
     border-radius: 4px;
+    font-size: x-large
   }
 
   .etapa:not(:active):hover,
@@ -112,118 +188,6 @@ form {
   .etapa:focus::before,
   .etapa:active::before {
     opacity: 1;
-    /* Hacerlo completamente visible cuando esté activo */
   }
 
-  .etapa svg {
-    width: 15px
-  }
-}
-
-.dropzone {
-  border: 3px dashed black;
-  padding: 2rem;
-  background-color: gray;
-}
-
-body {
-  margin: 10;
-  display: flex;
-  position: relative;
-  place-content: center;
-  flex-direction: column;
-  place-items: center;
-  min-width: 320px;
-  min-height: 100vh;
-}
-
-a {
-  font-weight: 500;
-  color: #646cff;
-  text-decoration: inherit;
-}
-
-a:hover {
-  color: #535bf2;
-}
-
-h1 {
-  font-size: 3.2em;
-  line-height: 1.1;
-  color: #0D1117;
-  margin: 0;
-  font-family: 'Trebuchet MS', 'Lucida Sans Unicode', 'Lucida Grande', 'Lucida Sans', Arial, sans-serif
-}
-
-.beautiful-button {
-  position: relative;
-  display: inline-block;
-  background: linear-gradient(to bottom, #0D1117, #0D1117);
-  /* Gradient background */
-  color: white;
-  /* White text color */
-  font-family: "Segoe UI", sans-serif;
-  /* Stylish and legible font */
-  font-weight: bold;
-  font-size: 18px;
-  /* Large font size */
-  border: none;
-  /* No border */
-  border-radius: 30px;
-  /* Rounded corners */
-  padding: 14px 28px;
-  /* Large padding */
-  cursor: pointer;
-  /* Cursor on hover */
-  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
-  /* Subtle shadow */
-  animation: button-shimmer 2s infinite;
-  transition: all 0.3s ease-in-out;
-  /* Smooth transition */
-}
-
-/* Hover animation */
-.beautiful-button:hover {
-  background: linear-gradient(to bottom, #5b67b7, #0D1117);
-  animation: button-particles 1s ease-in-out infinite;
-  transform: translateY(-2px);
-}
-
-/* Click animation */
-.beautiful-button:active {
-  transform: scale(0.95);
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
-}
-
-/* Shimmer animation */
-@keyframes button-shimmer {
-  0% {
-    background-position: left top;
-  }
-
-  100% {
-    background-position: right bottom;
-  }
-}
-
-/* Particle animation */
-@keyframes button-particles {
-  0% {
-    background-position: left top;
-  }
-
-  100% {
-    background-position: right bottom;
-  }
-}
-
-@media (prefers-color-scheme: light) {
-  :root {
-    color: #213547;
-    background-color: #ffffff;
-  }
-
-  a:hover {
-    color: #747bff;
-  }
 }
