@@ -6,7 +6,7 @@ import "./App.css";
 
 function App() {
   const [currentStage, setCurrentStage] = useState(1);
-  const [title, setTitle] = useState('Matriz de transición');
+  const [title, setTitle] = useState('Matriz de Transición');
   const [contextMenu, setContextMenu] = useState(null);
   const [etapas, setEtapas] = useState([
     { id: 1, name: "Etapa 1", title: 'Matriz de transición' },
@@ -62,7 +62,6 @@ function App() {
   const handleCloseContextMenu = useCallback(() => {
     setContextMenu(null);
   }, []);
-  }, []);
 
   useEffect(() => {
     const handleOutsideClick = (event) => {
@@ -86,7 +85,6 @@ function App() {
     if (etapaSeleccionada) {
       setCurrentStage(etapaId);
       setTitle(etapaSeleccionada.title);
-      setTitle(etapaSeleccionada.title);
     }
   };
 
@@ -96,9 +94,7 @@ function App() {
 
   const handleRightClick = (event, filePath) => {
     event.preventDefault();
-    event.preventDefault();
     setContextMenu({
-      filePath,
       filePath,
       xPos: event.pageX + 'px',
       yPos: event.pageY + 'px',
@@ -106,8 +102,6 @@ function App() {
   };
 
   const handleDeleteFile = (filePath) => {
-    setFiles(files.filter(file => file.path !== filePath));
-    setContextMenu(null);
     setFiles(files.filter(file => file.path !== filePath));
     setContextMenu(null);
   };
