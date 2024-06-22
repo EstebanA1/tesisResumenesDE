@@ -11,10 +11,15 @@
 }
 
 .title-container {
-  font-size: 23px;
-  margin: 20px 0 0 20%;
-  color: black;
+  height: 20px; 
   display: flex;
+  align-items: center;
+  font-size: 22px;
+  margin-top: 28px;
+  margin-bottom: 20px;
+  margin-left: 15.2rem;
+  text-align: left;
+  white-space: pre-wrap;
 }
 
 .main-container {
@@ -39,7 +44,7 @@
 .etapas-container {
   display: flex;
   flex-direction: column;
-  padding: 20px;
+  padding: 30px;
   margin-top: 10px;
 }
 
@@ -194,4 +199,13 @@ button {
   flex-direction: row;
   justify-content: space-around;
   align-items: center;
+}
+
+.files-counter {
+  font-family: math;
+  margin-left: auto;
+}
+
+body {
+  overflow-y: hidden; /* Oculta la barra de desplazamiento vertical */
 }

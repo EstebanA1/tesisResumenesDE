@@ -14,19 +14,22 @@ function App() {
     { id: 3, name: "Etapa 3", title: 'Calcular pesos de evidencia' },
     { id: 4, name: "Etapa 4", title: 'Correlacion del mapa de analisis' },
     { id: 5, name: "Etapa 5", title: 'Configurar y ejecutar un modelo de simulacion LUCC' },
-    { id: 6, name: "Etapa 6", title: 'Validar la simulacion utilizando una funcion dacay exponencial' },
-    { id: 7, name: "Etapa 7", title: 'Validar simulacion utilizando funcion dacay constante de ventanas multiples' },
+    { id: 6, name: "Etapa 6", title: 'Validar la simulacion utilizando una funcion dacay exponencial' },    
+    { id: 7, name: "Etapa 7", title: 'Validar simulacion utilizando funcion dacay constante de                                                                          ventanas multiples' },
     { id: 8, name: "Etapa 8", title: 'Ejecutar simulacion con formacion de parches' },
     { id: 9, name: "Etapa 9", title: 'Ejecutar simulacion con formacion de parches y expansión' },
     { id: 10, name: "Etapa 10", title: 'Proyeccion del proyecto LUCC' },
   ]);
 
   const [files, setFiles] = useState([]);
-  const [uploadProgress, setUploadProgress] = useState({}); // Estado para el progreso de carga
-  const [report, setReport] = useState(null);
+  const [uploadProgress, setUploadProgress] = useState({});
+  const [totalFiles, setTotalFiles] = useState(0);
+  const [successfulUploads, setSuccessfulUploads] = useState(0);
 
   const onDrop = useCallback((acceptedFiles) => {
     const validFiles = acceptedFiles.filter(file => file.type === 'image/jpeg' || file.type === 'image/png');
+    setTotalFiles(prevTotal => prevTotal + validFiles.length);
+    let successCount = 0;
 
     validFiles.forEach((file) => {
       const reader = new FileReader();
@@ -46,9 +49,11 @@ function App() {
         }
       };
       reader.onloadend = () => {
+        successCount++;
         setFiles(prevFiles => [...prevFiles, Object.assign(file, {
           preview: URL.createObjectURL(file)
         })]);
+        setSuccessfulUploads(prevSuccessful => prevSuccessful + 1);
       };
       reader.readAsDataURL(file);
     });
@@ -78,6 +83,8 @@ function App() {
 
   useEffect(() => {
     setFiles([]);
+    setTotalFiles(0);
+    setSuccessfulUploads(0);
   }, [currentStage]);
 
   const handleStageClick = (etapaId) => {
@@ -106,6 +113,14 @@ function App() {
     setContextMenu(null);
   };
 
+  const handleGenerateReport = () => {
+    // Lógica para generar el informe
+    // Después de generar el informe, reiniciar el contador
+    setFiles([]);
+    setTotalFiles(0);
+    setSuccessfulUploads(0);
+  };
+
   return (
     <div className="app-container">
       <nav className="nav-container">
@@ -129,7 +144,7 @@ function App() {
         variant="contained"
         color="secondary"
         className="load-files-button" onClick={() => document.querySelector('.dropzone input').click()}>
-        {<FileUploadIcon/>} Cargar archivos
+        {<FileUploadIcon />} Cargar archivos
       </button>
 
       <div className="main-container">
@@ -143,45 +158,24 @@ function App() {
             </div>
           </form>
           <div className="button-container">
-            <button className="beautiful-button">Generar Informe</button>
+            <button className="beautiful-button" onClick={handleGenerateReport}>Generar Informe</button>
+            <p className={`files-counter ${successfulUploads === totalFiles ? 'success' : 'error'}`}>
+              {successfulUploads}/{totalFiles}
+            </p>
           </div>
-
         </div>
-        <aside className="files-container" onClick={handleCloseContextMenu}>
-          <div className="files-header">
-            <h4>Archivos</h4>
-          </div>
-          <div>
-            <ul className="files-list">
-              {files.map(file => (
-                <li key={file.path} className="file-item"
-                  onContextMenu={(e) => handleRightClick(e, file.path)}>
-                  <img src={file.preview} className="file-preview" alt="preview" />
-                  <span className="file-path">{file.path}</span>
-                  {uploadProgress[file.name] !== 100 && (
-                    <div className="progress-bar-container">
-                      <progress value={uploadProgress[file.name]} max="100" className="progress-bar" />
-                    </div>
-                  )}
-                </li>
-              ))}
-            </ul>
-
-            {contextMenu && (
-              <ul
-                className="context-menu"
-                style={{
-                  top: contextMenu.yPos,
-                  left: contextMenu.xPos,
-                }}
-                onClick={() => handleDeleteFile(contextMenu.filePath)}
-              >
-                <li>Eliminar</li>
-              </ul>
-            )}
-          </div>
-        </aside>
       </div>
+      {contextMenu && (
+        <div
+          className="context-menu"
+          style={{
+            top: contextMenu.yPos,
+            left: contextMenu.xPos
+          }}
+        >
+          <button onClick={() => handleDeleteFile(contextMenu.filePath)}>Eliminar</button>
+        </div>
+      )}
     </div>
   );
 }
