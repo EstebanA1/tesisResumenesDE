@@ -103,6 +103,15 @@
   margin-bottom: 20px;
 }
 
+.file-counter {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  color: black;
+  padding: 10px;
+  font-size: 1.2em;
+}
+
 .button-container {
   width: 100%;
   display: flex;
@@ -124,11 +133,6 @@
   margin-top: 60px;
   margin-right: 40px;
 }
-
-/* #FileUploadIcon {
-  margin-top: 10px;
-} */
-
 
 .files-container {
   width: 100%;
@@ -201,11 +205,64 @@ button {
   align-items: center;
 }
 
-.files-counter {
+.file-counter {
   font-family: math;
   margin-left: auto;
+  margin-bottom: 50px;
+  margin-right: 30px;
+  font-size: 1.5em;
+  font-weight: bold;
 }
 
-body {
-  overflow-y: hidden; /* Oculta la barra de desplazamiento vertical */
+.pdf-preview-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5); /* Sombreado */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 10; 
+}
+
+.pdf-preview {
+  position: relative;
+  width: 80%;
+  height: 80%;
+  background: white;
+  z-index: 1000;
+  border: 2px solid #9a9a9a;
+}
+
+.close-button {
+  position: absolute;
+  top: 10px;
+  right: -52.5px;
+  margin-top: -11px;
+  background: none;
+  border-top: 3px solid #9a9a9a;
+  border-right: 3px solid #9a9a9a;
+  border-bottom: 3px solid #9a9a9a;
+  border-left: none;
+  background-color: #323639;
+  padding: 12px;
+  border-radius: 2px;
+  font-size: 1.5em;
+  cursor: pointer;
+  color: #ffffff;
+  z-index: 11;
+}
+
+.loader-container {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 1000;
+  background-color: rgba(255, 255, 255, 0.8);
+  padding: 20px;
+  border-radius: 10px;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
 }
