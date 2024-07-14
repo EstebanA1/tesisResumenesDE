@@ -34,7 +34,11 @@ function App() {
     const [pdfPreviewUrl, setPdfPreviewUrl] = useState(null);
 
     const onDrop = useCallback((acceptedFiles) => {
-        const validFiles = acceptedFiles.filter(file => file.type === 'text/csv' || file.name.endsWith('.xlsm') || file.name.endsWith('.xlsx'));
+        const validFiles = acceptedFiles.filter(file =>
+            file.type === 'text/csv' ||
+            file.name.endsWith('.xlsm') ||
+            file.name.endsWith('.xlsx')
+        );
         const newFilesCount = files.length + validFiles.length;
 
         if (newFilesCount > 2) {
@@ -78,7 +82,11 @@ function App() {
 
     const { getRootProps, getInputProps, isDragActive } = useDropzone({
         onDrop,
-        accept: 'text/csv, .xlsm, .xlsx',
+        accept: {
+            'text/csv': ['.csv'],
+            'application/vnd.ms-excel': ['.xls'],
+            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': ['.xlsx', '.xlsm']
+        },
         maxFiles: 2 - files.length
     });
 
