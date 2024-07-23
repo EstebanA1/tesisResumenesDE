@@ -149,6 +149,8 @@ function App() {
     };
     const closePdfPreview = () => {
         setPdfPreviewUrl(null);
+        setFiles([]);
+        setSuccessfulUploads(0);
     };
 
     function CircularProgressWithLabel(props) {
