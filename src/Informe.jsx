@@ -106,6 +106,22 @@ export const generarInforme = async (files, etapaSeleccionada, onProgress) => {
 
     for (let [area, cambios] of Object.entries(cambiosPorArea)) {
         let texto = `${area} tuvo ${cambios.length} cambio${cambios.length > 1 ? 's' : ''} que ${cambios.length > 1 ? 'fueron' : 'fue'}:`;
+
+        // Calcular el espacio necesario para toda la zona
+        let espacioNecesario = lineHeight * 1.5; // Espacio para el título de la zona
+        cambios.forEach((cambio) => {
+            let detalleCambio = `- Pasó a ${cambio.to} en un ${(cambio.rate * 100).toFixed(4)}%`;
+            let splitText = doc.splitTextToSize(detalleCambio, marginRight);
+            espacioNecesario += splitText.length * lineHeight + lineHeight / 8;
+        });
+        espacioNecesario += lineHeight * 1.5; // Espacio extra al final de la zona
+
+        // Verificar si hay suficiente espacio en la página actual
+        if (yPos + espacioNecesario > doc.internal.pageSize.height - 20) {
+            doc.addPage();
+            yPos = 20;
+        }
+
         doc.setFontSize(14);
         doc.text(texto, 20, yPos);
         yPos += lineHeight * 1.5;
@@ -116,10 +132,6 @@ export const generarInforme = async (files, etapaSeleccionada, onProgress) => {
             let splitText = doc.splitTextToSize(detalleCambio, marginRight);
 
             splitText.forEach((line, i) => {
-                if (yPos > doc.internal.pageSize.height - 20) {
-                    doc.addPage();
-                    yPos = 20;
-                }
                 doc.text(line, 30, yPos);
                 yPos += lineHeight;
             });
@@ -144,7 +156,7 @@ export const generarInforme = async (files, etapaSeleccionada, onProgress) => {
             const baseWidth = 400;
             const baseHeight = isGeneral ? 400 : 300;
             const chartWidth = isGeneral ? baseWidth : Math.max(baseWidth, cambios.length * 60);
-            const chartHeight = isGeneral ? baseHeight + (cambios.length * 30) : baseHeight;
+            const chartHeight = isGeneral ? baseHeight : baseHeight;
 
             const canvas = document.createElement('canvas');
             canvas.width = chartWidth * 2;
@@ -152,69 +164,26 @@ export const generarInforme = async (files, etapaSeleccionada, onProgress) => {
             const ctx = canvas.getContext('2d');
 
             try {
-                const maxValue = isGeneral ? 100 : Math.max(...cambios.map(c => c.rate * 100));
-                const step = calculateStep(maxValue);
-                const maxY = Math.ceil(maxValue / step) * step;
                 console.log(`Creando gráfico para ${area} con datos:`, cambios);
 
+                const distinctColors = isGeneral ? generateDistinctColors(cambios.length) : ['rgba(54, 162, 235, 0.8)'];
+
                 new Chart(ctx, {
-                    type: 'bar',
+                    type: isGeneral ? 'pie' : 'bar',
                     data: {
                         labels: cambios.map(c => c.to),
                         datasets: [{
                             label: 'Porcentaje de cambio',
                             data: isGeneral ? cambios.map(c => c.rate) : cambios.map(c => c.rate * 100),
-                            backgroundColor: 'rgba(54, 162, 235, 0.8)',
-                            borderColor: 'rgba(54, 162, 235, 1)',
+                            backgroundColor: distinctColors,
+                            borderColor: 'rgba(255, 255, 255, 1)',
                             borderWidth: 1
                         }]
                     },
                     options: {
                         responsive: false,
                         maintainAspectRatio: false,
-                        indexAxis: isGeneral ? 'y' : 'x',
-                        scales: {
-                            x: {
-                                beginAtZero: true,
-                                max: isGeneral ? 100 : undefined,
-                                ticks: {
-                                    callback: function (value, index) {
-                                        if (isGeneral) {
-                                            const decimals = Math.max(0, -Math.floor(Math.log10(step)));
-                                            return value.toFixed(decimals) + '%';
-                                        } else {
-                                            const label = this.getLabelForValue(value);
-                                            return label.split(' ');
-                                        }
-                                    }
-                                },
-                                title: {
-                                    display: false
-                                }
-                            },
-                            y: {
-                                beginAtZero: true,
-                                max: isGeneral ? 100 : maxY,
-                                ticks: {
-                                    callback: function (value, index) {
-                                        if (isGeneral) {
-                                            const label = this.getLabelForValue(value);
-                                            const dataItem = cambios[index];
-                                            if (dataItem) {
-                                                return `${label} (${dataItem.rate.toFixed(2)}%)`;
-                                            }
-                                            return label;
-                                        } else {
-                                            const decimals = Math.max(0, -Math.floor(Math.log10(step)));
-                                            return value.toFixed(decimals) + '%';
-                                        }
-                                    }
-                                },
-                                title: {
-                                    display: false
-                                }
-                            }
-                        },
+                        indexAxis: 'x',
                         plugins: {
                             tooltip: {
                                 callbacks: {
@@ -223,28 +192,59 @@ export const generarInforme = async (files, etapaSeleccionada, onProgress) => {
                                         if (label) {
                                             label += ': ';
                                         }
-                                        label += context.formattedValue + '%';
+                                        label += context.parsed.toFixed(2) + '%';
                                         return label;
                                     }
                                 }
                             },
                             title: {
-                                display: !isGeneral, // Mostrar título solo si no es el gráfico general
+                                display: !isGeneral,
                                 text: isGeneral ? '' : `Cambios desde ${area}`,
                                 font: {
-                                    size: 14
+                                    size: 16
                                 }
                             },
                             legend: {
-                                display: false
+                                display: isGeneral,
+                                position: 'right',
+                                labels: {
+                                    generateLabels: function (chart) {
+                                        const data = chart.data;
+                                        if (data.labels.length && data.datasets.length) {
+                                            return data.labels.map((label, i) => {
+                                                const meta = chart.getDatasetMeta(0);
+                                                const style = meta.controller.getStyle(i);
+                                                return {
+                                                    text: `${label} (${data.datasets[0].data[i].toFixed(2)}%)`,
+                                                    fillStyle: style.backgroundColor,
+                                                    strokeStyle: style.borderColor,
+                                                    lineWidth: style.borderWidth,
+                                                    hidden: isNaN(data.datasets[0].data[i]) || meta.data[i].hidden,
+                                                    index: i
+                                                };
+                                            });
+                                        }
+                                        return [];
+                                    }
+                                }
                             }
                         },
-                        layout: {
-                            padding: {
-                                left: 15,
-                                right: 15,
-                                top: 15,
-                                bottom: 15
+                        scales: isGeneral ? {} : {
+                            x: {
+                                ticks: {
+                                    callback: function (value) {
+                                        const label = this.getLabelForValue(value);
+                                        return label.split(' ');
+                                    }
+                                }
+                            },
+                            y: {
+                                beginAtZero: true,
+                                ticks: {
+                                    callback: function (value) {
+                                        return value + '%';
+                                    }
+                                }
                             }
                         }
                     }
@@ -259,13 +259,14 @@ export const generarInforme = async (files, etapaSeleccionada, onProgress) => {
                         console.log(`Imagen generada correctamente para ${area}`);
                         resolve({ imgData, width: chartWidth, height: chartHeight });
                     }
-                }, 1000);
+                }, 2000);
             } catch (error) {
                 console.error(`Error al crear el gráfico para ${area}:`, error);
                 resolve(null);
             }
         });
     };
+
 
     // Generación de gráficos individuales
     let totalCharts = Object.keys(cambiosPorArea).length + 1; // +1 para el gráfico general
@@ -278,7 +279,7 @@ export const generarInforme = async (files, etapaSeleccionada, onProgress) => {
         }
 
         let yPos = isFirstChart ? 40 : 20;
-        
+
         chartsDone++;
         onProgress(50 + (chartsDone / totalCharts) * 45); // Progreso del 50% al 95%
 
@@ -347,29 +348,13 @@ export const generarInforme = async (files, etapaSeleccionada, onProgress) => {
     return pdfUrl;
 };
 
-const calculateStep = (max) => {
-    if (max === 0) return 0.01;
-    const roughStep = max / 5;
-    const magnitude = Math.pow(10, Math.floor(Math.log10(roughStep)));
-    const normalized = roughStep / magnitude;
-
-    let step;
-    if (normalized < 1.5) step = magnitude;
-    else if (normalized < 3) step = 2 * magnitude;
-    else if (normalized < 7) step = 5 * magnitude;
-    else step = 10 * magnitude;
-
-    while (step > max / 2) {
-        step /= 10;
-    }
-
-    const minStep = 0.00001;
-    while (step < minStep) {
-        step *= 10;
-    }
-
-    return step;
-};
+function generateDistinctColors(count) {
+    const hueStep = 360 / count;
+    return Array.from({ length: count }, (_, i) => {
+        const hue = i * hueStep;
+        return `hsl(${hue}, 70%, 60%)`;
+    });
+}
 
 const prepararDatosGraficoGeneral = (cambiosPorArea) => {
     let datosGenerales = [];
@@ -412,7 +397,7 @@ const prepararDatosGraficoGeneral = (cambiosPorArea) => {
 };
 
 const generateAllCharts = async (cambiosPorArea) => {
-    const chartPromises = Object.entries(cambiosPorArea).map(([area, cambios]) => 
+    const chartPromises = Object.entries(cambiosPorArea).map(([area, cambios]) =>
         createChartImage(area, cambios, false)
     );
 

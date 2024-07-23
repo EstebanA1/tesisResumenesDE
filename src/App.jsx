@@ -32,21 +32,21 @@ function App() {
     const [totalFiles, setTotalFiles] = useState(2);
     const [successfulUploads, setSuccessfulUploads] = useState(0);
     const [pdfPreviewUrl, setPdfPreviewUrl] = useState(null);
+    const [shouldShake, setShouldShake] = useState(false);
 
     const onDrop = useCallback((acceptedFiles) => {
+        const totalFilesCount = files.length + acceptedFiles.length;
+
+        if (totalFilesCount > 2) {
+            alert("Se necesitan 2 archivos, un diccionario y el archivo intermedio de DINAMICA EGO.");
+            return;
+        }
+
         const validFiles = acceptedFiles.filter(file =>
             file.type === 'text/csv' ||
             file.name.endsWith('.xlsm') ||
             file.name.endsWith('.xlsx')
         );
-        const newFilesCount = files.length + validFiles.length;
-
-        if (newFilesCount > 2) {
-            alert("No puedes subir más de 2 archivos.");
-            return;
-        }
-
-        let successCount = 0;
 
         validFiles.forEach((file) => {
             const reader = new FileReader();
@@ -66,11 +66,13 @@ function App() {
                 }
             };
             reader.onloadend = () => {
-                successCount++;
-                setFiles(prevFiles => [...prevFiles, Object.assign(file, {
-                    preview: URL.createObjectURL(file)
-                })]);
-                setSuccessfulUploads(prevSuccessful => prevSuccessful + 1);
+                setFiles(prevFiles => {
+                    const newFiles = [...prevFiles, Object.assign(file, {
+                        preview: URL.createObjectURL(file)
+                    })];
+                    return newFiles.slice(-2); // Mantiene solo los 2 archivos más recientes
+                });
+                setSuccessfulUploads(prevSuccessful => Math.min(prevSuccessful + 1, 2));
             };
             if (file.name.endsWith('.xlsm') || file.name.endsWith('.xlsx')) {
                 reader.readAsArrayBuffer(file);
@@ -80,14 +82,24 @@ function App() {
         });
     }, [files]);
 
+    const onDropRejected = useCallback((rejectedFiles) => {
+        if (files.length + rejectedFiles.length > 2) {
+            alert("Se necesitan 2 archivos, un diccionario y el archivo intermedio de DINAMICA EGO.");
+        } else {
+            alert("Archivo(s) rechazado(s). Asegúrate de que son archivos CSV, XLSM o XLSX.");
+        }
+    }, [files]);
+
     const { getRootProps, getInputProps, isDragActive } = useDropzone({
         onDrop,
+        onDropRejected,
         accept: {
             'text/csv': ['.csv'],
             'application/vnd.ms-excel': ['.xls'],
             'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': ['.xlsx', '.xlsm']
         },
-        maxFiles: 2 - files.length
+        maxFiles: 2,
+        multiple: true
     });
 
     const handleCloseContextMenu = useCallback(() => {
@@ -129,8 +141,9 @@ function App() {
 
     const handleGenerateReport = async (e) => {
         e.preventDefault();
-        if (files.length < 2) {
-            alert("Se necesitan 2 archivos, un diccionario y el archivo intermedio de DINAMICA EGO");
+        if (files.length < 2 || isLoading) {
+            setShouldShake(true);
+            setTimeout(() => setShouldShake(false), 820);
             return;
         }
         setIsLoading(true);
@@ -147,6 +160,7 @@ function App() {
             setIsLoading(false);
         }
     };
+
     const closePdfPreview = () => {
         setPdfPreviewUrl(null);
         setFiles([]);
@@ -211,16 +225,26 @@ function App() {
             <div className="main-container">
                 <div className="upload-container">
                     <form className="upload-form" onSubmit={handleGenerateReport}>
-                        <div {...getRootProps()} className="dropzone">
+                        <div {...getRootProps()} className={`dropzone ${shouldShake ? 'shake' : ''}`}>
                             <input {...getInputProps({ accept: 'text/csv, .xlsm, .xlsx' })} />
                             {isDragActive ? (
                                 <p>Suelta los archivos aquí...</p>
                             ) : (
-                                <p>Arrastra y suelta archivos aquí, o haz clic para seleccionar archivos</p>
+                                <p>
+                                    {files.length === 0
+                                        ? "Arrastra y suelta 2 archivos aquí, o haz clic para seleccionarlos"
+                                        : files.length === 1
+                                            ? "Arrastra y suelta 1 archivo más, o haz clic para seleccionarlo"
+                                            : "Has subido los 2 archivos necesarios"}
+                                </p>
                             )}
                         </div>
                         <br />
-                        <button className="beautiful-button" type="submit" disabled={files.length < 2 || isLoading}>
+                        <button
+                            className="beautiful-button"
+                            type="button"
+                            onClick={handleGenerateReport}
+                        >
                             {isLoading ? 'Generando...' : 'Generar Informe'}
                         </button>
                         {isLoading && (
