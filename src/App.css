@@ -102,7 +102,7 @@
   font-size: 16px;
   cursor: pointer;
   border-radius: 4px;
-  margin-bottom: 20px;
+  margin-top: 20px;
 }
 
 .file-counter {
@@ -133,7 +133,9 @@
   top: 0;
   right: 0;
   margin-top: 60px;
-  margin-right: 40px;
+  margin-right: 2rem;
+  font-weight: bold;
+  font-size: 14px;
 }
 
 .files-container {
@@ -242,19 +244,17 @@ button {
   position: absolute;
   top: 10px;
   right: -52.5px;
-  margin-top: -11px;
+  margin-top: -11.6px;
   background: none;
-  border-top: 3px solid #9a9a9a;
-  border-right: 3px solid #9a9a9a;
+  border-top: 3.8px solid #9a9a9a;
+  border-right: 3.8px solid #9a9a9a;
   border-bottom: 3px solid #9a9a9a;
   border-left: none;
   background-color: #323639;
   padding: 12px;
-  border-radius: 2px;
   font-size: 1.5em;
   cursor: pointer;
   color: #ffffff;
-  z-index: 11;
 }
 
 .loader-container {
@@ -281,4 +281,90 @@ button {
 
 .shake {
   animation: shake 0.82s cubic-bezier(.36,.07,.19,.97) both;
+}
+
+.help-button {
+  background-color: #ffffff;
+  border: 2px dashed #a0a0a0;
+  border-radius: 4px;
+  color: #a0a0a0;
+  cursor: pointer;
+  right: 0;
+  position: absolute;
+  margin-top: 20px;
+  padding: 4px 8px; 
+}
+
+.carousel-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.7);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 2000;
+}
+
+.carousel-content {
+  position: relative;
+  max-width: 80%;
+  max-height: 80%;
+  background-color: white;
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+  animation: popUp 0.3s ease-out;
+}
+
+@keyframes popUp {
+  from {
+    transform: scale(0.8);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.carousel-content img {
+  max-width: 100%;
+  max-height: calc(80vh - 100px);
+  object-fit: contain;
+}
+
+.carousel-close-button {
+  position: absolute;
+  top: -15px;
+  right: -15px;
+  background-color: white;
+  border: none;
+  border-radius: 50%;
+  padding: 8px;
+  cursor: pointer;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+  z-index: 2001;
+}
+
+.carousel-nav-button {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  background-color: rgba(255, 255, 255, 0.7);
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+  padding: 10px;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+}
+
+.carousel-nav-button.prev {
+  left: 10px;
+}
+
+.carousel-nav-button.next {
+  right: 10px;
 }

@@ -1,156 +1,113 @@
-import "./App.css";
+import React, { useState, useEffect, useCallback } from "react";
 import { useDropzone } from "react-dropzone";
-import { generarInforme } from './informe.jsx';
+import { generarInforme } from './Informe.jsx';
 import CloseIcon from '@mui/icons-material/Close';
 import AssignmentIcon from '@mui/icons-material/Assignment';
 import FileUploadIcon from '@mui/icons-material/FileUpload';
-import React, { useState, useEffect, useCallback } from "react";
-import HelpIcon from '@mui/icons-material/Help';
 import CircularProgress from '@mui/material/CircularProgress';
 import Typography from '@mui/material/Typography';
 import Box from '@mui/material/Box';
+import DeleteIcon from '@mui/icons-material/Delete';
+import ArrowForwardIosIcon from '@mui/icons-material/ArrowForwardIos';
+import ArrowBackIosIcon from '@mui/icons-material/ArrowBackIos';
+
+import imagen1 from '../src/imagenes/imagen1.webp';
+import imagen2 from '../src/imagenes/imagen2.webp';
 
 function App() {
     const [currentStage, setCurrentStage] = useState(1);
     const [title, setTitle] = useState('Matriz de Transición');
-    const [contextMenu, setContextMenu] = useState(null);
     const [etapas, setEtapas] = useState([
         { id: 1, name: "Etapa 1", title: 'Matriz de transición' },
-        { id: 2, name: "Etapa 2", title: 'Calcular rangos o categorizar variables de tonos grices' },
-        { id: 3, name: "Etapa 3", title: 'Calcular pesos de evidencia' },
-        { id: 4, name: "Etapa 4", title: 'Correlacion del mapa de analisis' },
-        { id: 5, name: "Etapa 5", title: 'Configurar y ejecutar un modelo de simulacion LUCC' },
-        { id: 6, name: "Etapa 6", title: 'Validar la simulacion utilizando una funcion dacay exponencial' },
-        { id: 7, name: "Etapa 7", title: 'Validar simulacion utilizando funcion dacay constante de ventanas multiples' },
-        { id: 8, name: "Etapa 8", title: 'Ejecutar simulacion con formacion de parches' },
-        { id: 9, name: "Etapa 9", title: 'Ejecutar simulacion con formacion de parches y expansión' },
-        { id: 10, name: "Etapa 10", title: 'Proyeccion del proyecto LUCC' },
+        { id: 2, name: "Etapa 2", title: 'Pesos de evidencia' },
+        // Otras etapas...
     ]);
 
-    const [files, setFiles] = useState([]);
-    const [uploadProgress, setUploadProgress] = useState({});
-    const [totalFiles, setTotalFiles] = useState(2);
-    const [successfulUploads, setSuccessfulUploads] = useState(0);
+    const [showCarousel, setShowCarousel] = useState(false);
+    const [currentImageIndex, setCurrentImageIndex] = useState(0);
+    const [images, setImages] = useState([]);
+    const [file, setFile] = useState(null);
+    const [dictionary, setDictionary] = useState(null);
     const [pdfPreviewUrl, setPdfPreviewUrl] = useState(null);
-    const [shouldShake, setShouldShake] = useState(false);
+    const [showHelp, setShowHelp] = useState(false);
+    const [isLoading, setIsLoading] = useState(false);
+    const [progress, setProgress] = useState(0);
+    const [shakeElements, setShakeElements] = useState({
+        dropzone: false,
+        dictionary: false
+    });
+
+    useEffect(() => {
+        setImages([
+            imagen1,
+            imagen2,
+        ]);
+    }, []);
+
+    const toggleHelp = () => {
+        setShowCarousel(!showCarousel);
+        setCurrentImageIndex(0);
+    };
+
+    const nextImage = () => {
+        setCurrentImageIndex((prevIndex) =>
+            prevIndex === images.length - 1 ? 0 : prevIndex + 1
+        );
+    };
+
+    const prevImage = () => {
+        setCurrentImageIndex((prevIndex) =>
+            prevIndex === 0 ? images.length - 1 : prevIndex - 1
+        );
+    };
 
     const onDrop = useCallback((acceptedFiles) => {
-        const totalFilesCount = files.length + acceptedFiles.length;
-
-        if (totalFilesCount > 2) {
-            alert("Se necesitan 2 archivos, un diccionario y el archivo intermedio de DINAMICA EGO.");
-            return;
+        if (acceptedFiles.length > 0) {
+            setFile(acceptedFiles[0]);
         }
-
-        const validFiles = acceptedFiles.filter(file =>
-            file.type === 'text/csv' ||
-            file.name.endsWith('.xlsm') ||
-            file.name.endsWith('.xlsx')
-        );
-
-        validFiles.forEach((file) => {
-            const reader = new FileReader();
-            reader.onloadstart = () => {
-                setUploadProgress(prev => ({
-                    ...prev,
-                    [file.name]: 0
-                }));
-            };
-            reader.onprogress = (event) => {
-                if (event.lengthComputable) {
-                    const progress = Math.round((event.loaded * 100) / event.total);
-                    setUploadProgress(prev => ({
-                        ...prev,
-                        [file.name]: progress
-                    }));
-                }
-            };
-            reader.onloadend = () => {
-                setFiles(prevFiles => {
-                    const newFiles = [...prevFiles, Object.assign(file, {
-                        preview: URL.createObjectURL(file)
-                    })];
-                    return newFiles.slice(-2); // Mantiene solo los 2 archivos más recientes
-                });
-                setSuccessfulUploads(prevSuccessful => Math.min(prevSuccessful + 1, 2));
-            };
-            if (file.name.endsWith('.xlsm') || file.name.endsWith('.xlsx')) {
-                reader.readAsArrayBuffer(file);
-            } else {
-                reader.readAsText(file);
-            }
-        });
-    }, [files]);
-
-    const onDropRejected = useCallback((rejectedFiles) => {
-        if (files.length + rejectedFiles.length > 2) {
-            alert("Se necesitan 2 archivos, un diccionario y el archivo intermedio de DINAMICA EGO.");
-        } else {
-            alert("Archivo(s) rechazado(s). Asegúrate de que son archivos CSV, XLSM o XLSX.");
-        }
-    }, [files]);
+    }, []);
 
     const { getRootProps, getInputProps, isDragActive } = useDropzone({
         onDrop,
-        onDropRejected,
-        accept: {
-            'text/csv': ['.csv'],
-            'application/vnd.ms-excel': ['.xls'],
-            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': ['.xlsx', '.xlsm']
-        },
-        maxFiles: 2,
-        multiple: true
+        accept: currentStage === 1
+            ? { 'text/csv': ['.csv'] }
+            : { 'application/octet-stream': ['.dcf'] },
+        maxFiles: 1,
+        multiple: false
     });
 
-    const handleCloseContextMenu = useCallback(() => {
-        setContextMenu(null);
-    }, []);
-
-    useEffect(() => {
-        const handleOutsideClick = (event) => {
-            if (contextMenu && !event.target.closest('.context-menu')) {
-                handleCloseContextMenu();
-            }
-        };
-
-        document.addEventListener('mousedown', handleOutsideClick);
-        return () => {
-            document.removeEventListener('mousedown', handleOutsideClick);
-        };
-    }, [contextMenu, handleCloseContextMenu]);
-
-    useEffect(() => {
-        setFiles([]);
-        setTotalFiles(2);
-        setSuccessfulUploads(0);
-    }, [currentStage]);
-
-    const handleStageClick = (etapaId) => {
-        const etapaSeleccionada = etapas.find(etapa => etapa.id === etapaId);
-        if (etapaSeleccionada) {
-            setCurrentStage(etapaId);
-            setTitle(etapaSeleccionada.title);
+    const handleDictionaryAction = useCallback(() => {
+        if (dictionary) {
+            setDictionary(null);
+        } else {
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = '.xlsx,.xlsm';
+            input.onchange = (e) => {
+                const file = e.target.files[0];
+                if (file) {
+                    setDictionary(file);
+                }
+            };
+            input.click();
         }
-    };
-
-    const handleDeleteFile = (filePath) => {
-        setFiles(files.filter(file => file.path !== filePath));
-        setContextMenu(null);
-        setSuccessfulUploads(prevSuccessful => prevSuccessful - 1);
-    };
+    }, [dictionary]);
 
     const handleGenerateReport = async (e) => {
         e.preventDefault();
-        if (files.length < 2 || isLoading) {
-            setShouldShake(true);
-            setTimeout(() => setShouldShake(false), 820);
+        if (!file || !dictionary || isLoading) {
+            setShakeElements({
+                dropzone: !file,
+                dictionary: !dictionary
+            });
+            setTimeout(() => setShakeElements({ dropzone: false, dictionary: false }), 820);
             return;
         }
         setIsLoading(true);
         setProgress(0);
         try {
             const etapaSeleccionada = etapas.find(etapa => etapa.id === currentStage);
-            const url = await generarInforme(files, etapaSeleccionada, (progress) => {
+            const url = await generarInforme([file, dictionary], etapaSeleccionada, (progress) => {
                 setProgress(progress);
             });
             setPdfPreviewUrl(url);
@@ -161,10 +118,18 @@ function App() {
         }
     };
 
+    const handleStageClick = (etapaId) => {
+        const etapaSeleccionada = etapas.find(etapa => etapa.id === etapaId);
+        if (etapaSeleccionada) {
+            setCurrentStage(etapaId);
+            setTitle(etapaSeleccionada.title);
+            setFile(null);
+        }
+    };
+
     const closePdfPreview = () => {
         setPdfPreviewUrl(null);
-        setFiles([]);
-        setSuccessfulUploads(0);
+        setFile(null);
     };
 
     function CircularProgressWithLabel(props) {
@@ -191,59 +156,61 @@ function App() {
         );
     }
 
-    const [isLoading, setIsLoading] = useState(false);
-    const [progress, setProgress] = useState(0);
-
     return (
         <div className="app-container">
             <nav className="nav-container">
                 <div className="etapas-container">
                     {etapas.map((etapa) => (
                         <button
-                            variant="contained"
-                            color="primary"
                             key={etapa.id}
                             className={`etapa ${currentStage === etapa.id ? 'active' : ''}`}
                             onClick={() => handleStageClick(etapa.id)}
                         >
-                            {<AssignmentIcon />} {etapa.name}
+                            <AssignmentIcon /> {etapa.name}
                         </button>
                     ))}
                 </div>
             </nav>
             <h1 className="title-container">{title}</h1>
-
             <button
-                variant="contained"
-                color="secondary"
-                className="load-files-button" onClick={() => document.querySelector('.dropzone input').click()}>
-                {<FileUploadIcon />} Cargar archivos
+                className={`load-files-button ${dictionary ? 'dictionary-loaded' : ''} ${shakeElements.dictionary ? 'shake' : ''}`}
+                onClick={handleDictionaryAction}
+                type="button"
+            >
+                {dictionary ? 'Eliminar Diccionario' : 'Subir Diccionario'}
+                {dictionary ? <DeleteIcon /> : <FileUploadIcon />}
             </button>
-
-            {/* <button><HelpIcon/></button> */}
 
             <div className="main-container">
                 <div className="upload-container">
                     <form className="upload-form" onSubmit={handleGenerateReport}>
-                        <div {...getRootProps()} className={`dropzone ${shouldShake ? 'shake' : ''}`}>
-                            <input {...getInputProps({ accept: 'text/csv, .xlsm, .xlsx' })} />
+                        <div
+                            {...getRootProps({
+                                className: `dropzone ${shakeElements.dropzone ? 'shake' : ''}`
+                            })}
+                        >
+                            <input {...getInputProps()} />
                             {isDragActive ? (
-                                <p>Suelta los archivos aquí...</p>
+                                <p>Suelta el archivo aquí...</p>
                             ) : (
                                 <p>
-                                    {files.length === 0
-                                        ? "Arrastra y suelta 2 archivos aquí, o haz clic para seleccionarlos"
-                                        : files.length === 1
-                                            ? "Arrastra y suelta 1 archivo más, o haz clic para seleccionarlo"
-                                            : "Has subido los 2 archivos necesarios"}
+                                    {!file
+                                        ? `Arrastra y suelta un archivo ${currentStage === 1 ? 'CSV' : 'DCF'} aquí, o haz clic para seleccionarlo`
+                                        : `Archivo ${currentStage === 1 ? 'CSV' : 'DCF'} cargado. Puedes reemplazarlo arrastrando otro archivo aquí.`}
                                 </p>
                             )}
                         </div>
-                        <br />
+                        <button
+                            className="help-button"
+                            onClick={toggleHelp}
+                            type="button"
+                        >
+                            ?
+                        </button>
                         <button
                             className="beautiful-button"
-                            type="button"
-                            onClick={handleGenerateReport}
+                            type="submit"
+                            disabled={isLoading}
                         >
                             {isLoading ? 'Generando...' : 'Generar Informe'}
                         </button>
@@ -254,14 +221,23 @@ function App() {
                         )}
                     </form>
                 </div>
-                {contextMenu && (
-                    <div
-                        className="context-menu"
-                        style={{ top: contextMenu.mouseY, left: contextMenu.mouseX }}
-                    >
-                        <button className="context-menu-item" onClick={() => handleDeleteFile(contextMenu.filePath)}>Eliminar archivo</button>
+
+                {showCarousel && (
+                <div className="carousel-overlay">
+                    <div className="carousel-content">
+                        <button className="carousel-close-button" onClick={toggleHelp}>
+                            <CloseIcon />
+                        </button>
+                        <img src={images[currentImageIndex]} alt={`Ayuda ${currentImageIndex + 1}`} />
+                        <button className="carousel-nav-button prev" onClick={prevImage}>
+                            <ArrowBackIosIcon />
+                        </button>
+                        <button className="carousel-nav-button next" onClick={nextImage}>
+                            <ArrowForwardIosIcon />
+                        </button>
                     </div>
-                )}
+                </div>
+            )}
 
                 {pdfPreviewUrl && (
                     <div className="pdf-preview-overlay">
@@ -273,10 +249,6 @@ function App() {
                         </div>
                     </div>
                 )}
-            </div>
-
-            <div className="file-counter">
-                {successfulUploads}/{totalFiles}
             </div>
         </div>
     );
