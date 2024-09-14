@@ -18,9 +18,8 @@ function App() {
     const [currentStage, setCurrentStage] = useState(1);
     const [title, setTitle] = useState('Matriz de Transición');
     const [etapas, setEtapas] = useState([
-        { id: 1, name: "Etapa 1", title: 'Matriz de transición' },
+        { id: 1, name: "Etapa 1", title: 'Matriz de transición' }, // Cambios por área
         { id: 2, name: "Etapa 2", title: 'Pesos de evidencia' },
-        // Otras etapas...
     ]);
 
     const [showCarousel, setShowCarousel] = useState(false);
@@ -29,7 +28,6 @@ function App() {
     const [file, setFile] = useState(null);
     const [dictionary, setDictionary] = useState(null);
     const [pdfPreviewUrl, setPdfPreviewUrl] = useState(null);
-    const [showHelp, setShowHelp] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
     const [progress, setProgress] = useState(0);
     const [shakeElements, setShakeElements] = useState({
@@ -223,21 +221,30 @@ function App() {
                 </div>
 
                 {showCarousel && (
-                <div className="carousel-overlay">
-                    <div className="carousel-content">
-                        <button className="carousel-close-button" onClick={toggleHelp}>
-                            <CloseIcon />
-                        </button>
-                        <img src={images[currentImageIndex]} alt={`Ayuda ${currentImageIndex + 1}`} />
-                        <button className="carousel-nav-button prev" onClick={prevImage}>
-                            <ArrowBackIosIcon />
-                        </button>
-                        <button className="carousel-nav-button next" onClick={nextImage}>
-                            <ArrowForwardIosIcon />
-                        </button>
+                    <div className="carousel-overlay">
+                        <div className="carousel-content">
+                            <button className="carousel-close-button" onClick={toggleHelp}>
+                                <CloseIcon />
+                            </button>
+                            <img src={images[currentImageIndex]} alt={`Ayuda ${currentImageIndex + 1}`} />
+                            <button className="carousel-nav-button prev" onClick={prevImage}>
+                                <ArrowBackIosIcon />
+                            </button>
+                            <button className="carousel-nav-button next" onClick={nextImage}>
+                                <ArrowForwardIosIcon />
+                            </button>
+                            <div className="carousel-indicators">
+                                {images.map((_, index) => (
+                                    <span
+                                        key={index}
+                                        className={`carousel-indicator ${index === currentImageIndex ? 'active' : ''}`}
+                                        onClick={() => setCurrentImageIndex(index)}
+                                    />
+                                ))}
+                            </div>
+                        </div>
                     </div>
-                </div>
-            )}
+                )}
 
                 {pdfPreviewUrl && (
                     <div className="pdf-preview-overlay">

@@ -36,53 +36,57 @@ export const generarInformeEtapa2 = async (files, etapaSeleccionada, onProgress)
 
     // Procesar el contenido del archivo .dcf
     const lines = dcfContent.split('\n').filter(line => line.trim() !== '');
-    const tabla = procesarLineas(lines, diccionario);
+    const tablas = procesarLineas(lines, diccionario);
     onProgress(60);
 
     // Generar PDF
     const doc = new jsPDF();
-    let yPos = 20;
+    
+    // Añadir título general
+    doc.setFontSize(16);
+    doc.text(`Informe de Pesos de Evidencia - ${etapaSeleccionada.name}`, doc.internal.pageSize.width / 2, 15, { align: 'center' });
 
-    // Añadir título de la tabla
-    doc.setFontSize(14);
-    doc.text(tabla.titulo, 14, yPos);
-    yPos += 10;
-
-    // Añadir subtítulo (datos a tratar)
-    doc.setFontSize(12);
-    doc.text(tabla.datosATratar, 14, yPos);
-    yPos += 10;
-
-    // Generar tabla
-    doc.autoTable({
-        head: [['Rangos', 'Pesos']],
-        body: tabla.datos,
-        startY: yPos,
-    });
-
-    yPos = doc.lastAutoTable.finalY + 10;
-
-    // Añadir gráfico al PDF
-    generarGrafico(doc, tabla.datos, yPos);
-
-    // Añadir resumen de rangos y valores
-    yPos += 130;
-    doc.setFontSize(12);
-    doc.text('Resumen de rangos y su efecto:', 14, yPos);
-    yPos += 10;
-
-    const resumen = generarResumen(tabla.datos);
-    console.log('Resumen generado:', resumen);
-
-    resumen.forEach(line => {
-        if (yPos >= doc.internal.pageSize.height - 20) {
+    tablas.forEach((tabla, index) => {
+        if (index > 0) {
             doc.addPage();
-            yPos = 20; // Reiniciar posición en la nueva página
         }
-        doc.text(line, 14, yPos);
-        yPos += 8;
-    });
 
+        let yPos = 30; // Empezamos más abajo para dejar espacio al título general
+
+        // Añadir título de la tabla
+        doc.setFontSize(14);
+        doc.text(tabla.titulo, 14, yPos);
+        yPos += 10;
+
+        // Añadir subtítulo (datos a tratar)
+        doc.setFontSize(12);
+        doc.text(tabla.datosATratar, 14, yPos);
+        yPos += 10;
+
+        // Generar tabla
+        doc.autoTable({
+            head: [['Rangos', 'Pesos']],
+            body: tabla.datos,
+            startY: yPos,
+            margin: { bottom: 50 },
+            styles: { cellPadding: 1.5, fontSize: 8 },
+        });
+
+        yPos = doc.lastAutoTable.finalY + 10;
+
+        // Añadir gráfico al PDF
+        generarGrafico(doc, tabla.datos, yPos);
+
+        // Añadir resumen de rangos y valores
+        yPos += 110; // Aumentar espacio después del gráfico
+
+        const resumen = generarResumen(tabla.datos);
+        resumen.forEach(line => {
+            doc.setFontSize(9);
+            doc.text(line, 14, yPos);
+            yPos += 5;
+        });
+    });
 
     onProgress(100);
     const pdfUrl = doc.output('bloburl');
@@ -90,9 +94,9 @@ export const generarInformeEtapa2 = async (files, etapaSeleccionada, onProgress)
 };
 
 const generarGrafico = (doc, datos, yPos) => {
-    const width = 200;
-    const height = 120;
-    const margin = { left: 25, right: 10, top: 10, bottom: 20 };
+    const width = 180;
+    const height = 100;
+    const margin = { left: 40, right: 10, top: 10, bottom: 20 }; // Aumentar margen izquierdo y inferior
 
     const xValues = datos.map(d => parseFloat(d[0].split(':')[1]));
     const yValues = datos.map(d => parseFloat(d[1]));
@@ -156,59 +160,69 @@ const generarGrafico = (doc, datos, yPos) => {
     });
 
     // Etiquetas de ejes
-    doc.setFontSize(10);
-    doc.text('Rangos', width / 2, yPos + height + 15, { align: 'center' });
-    doc.text('Pesos', 5, yPos + height / 2, { angle: 90, align: 'center' });
+    doc.setFontSize(9);
+    doc.text('Rangos', width / 2 + 15, yPos + height - 5, { align: 'center' });
+    doc.text('Pesos', 20, yPos + height / 2 , { angle: 90, align: 'center' });
 };
 
 const procesarLineas = (lines, diccionario) => {
-    const [lineaRangos, lineaPesos] = lines;
+    const tablas = [];
+    let lineaRangos = null;
 
-    const partesRangos = lineaRangos.split(/\s+/);
-    const rangos = partesRangos.slice(1);
-    const parametro = partesRangos[0].split('/')[0].slice(1) + '/' + partesRangos[0].split('/')[1];
+    for (let i = 0; i < lines.length; i++) {
+        const linea = lines[i].trim();
+        if (linea.startsWith(':')) {
+            lineaRangos = linea;
+        } else if (lineaRangos) {
+            const partesRangos = lineaRangos.split(/\s+/);
+            const rangos = partesRangos.slice(1);
+            const parametro = partesRangos[0].split('/')[0].slice(1) + '/' + partesRangos[0].split('/')[1];
 
-    const partesPesos = lineaPesos.split(/\s+/);
-    const [descripcion, ...pesos] = partesPesos;
+            const partesPesos = linea.split(/\s+/);
+            const [descripcion, ...pesos] = partesPesos;
 
-    const [from, to] = descripcion.split(',').map(Number);
+            const [from, to] = descripcion.split(',').map(Number);
 
-    const descripcionFrom = diccionario[from] || `ID ${from}`;
-    const descripcionTo = diccionario[to] || `ID ${to}`;
+            const descripcionFrom = diccionario[from] || `ID ${from}`;
+            const descripcionTo = diccionario[to] || `ID ${to}`;
 
-    const titulo = `Transición de ${descripcionFrom} a ${descripcionTo} (${from} -> ${to})`;
+            const titulo = `Transición de ${descripcionFrom} a ${descripcionTo} (${from} -> ${to})`;
 
-    const datos = rangos.map((rango, index) => {
-        if (pesos[index] && !isNaN(parseFloat(pesos[index]))) {
-            return [rango, pesos[index]];
+            const datos = rangos.map((rango, index) => {
+                if (pesos[index] && !isNaN(parseFloat(pesos[index]))) {
+                    return [rango, pesos[index]];
+                }
+                return null;
+            }).filter(item => item !== null);
+
+            tablas.push({
+                titulo,
+                datosATratar: parametro,
+                datos,
+            });
+
+            lineaRangos = null;
         }
-        return null;
-    }).filter(item => item !== null);
-
-    return {
-        titulo,
-        datosATratar: parametro,
-        datos,
-    };
+    }
+    return tablas;
 };
 
 const generarResumen = (datos) => {
     const resumen = [];
-    let rangoInicio = datos[0][0].split(':')[0];  // Tomamos el inicio del primer rango
+    let rangoInicio = datos[0][0].split(':')[0];
     let efectoActual = getEfecto(parseFloat(datos[0][1]));
 
     for (let i = 1; i < datos.length; i++) {
         const efecto = getEfecto(parseFloat(datos[i][1]));
         if (efecto !== efectoActual) {
             resumen.push(`El rango ${rangoInicio}:${datos[i - 1][0].split(':')[1]} ${efectoActual}.`);
-            rangoInicio = datos[i][0].split(':')[0];  // Actualizamos el inicio del nuevo rango
+            rangoInicio = datos[i][0].split(':')[0];
             efectoActual = efecto;
         }
     }
-    resumen.push(`El rango ${rangoInicio}:${datos[datos.length - 1][0].split(':')[1]} ${efectoActual}.`);
+    resumen.push(`Del rango ${rangoInicio}:${datos[datos.length - 1][0].split(':')[1]} ${efectoActual}.`);
     return resumen;
 };
-
 
 const getEfecto = (pesoNum) => {
     if (pesoNum >= 1) {
