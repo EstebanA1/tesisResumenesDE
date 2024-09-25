@@ -7,7 +7,6 @@ export const generarInformeEtapa2 = async (files, etapaSeleccionada, onProgress)
     let dcfContent = '';
     onProgress(5);
 
-    // Leer archivo .xlsx para el diccionario
     const diccionarioFile = files.find(file => file.name.endsWith('.xlsm') || file.name.endsWith('.xlsx'));
     if (diccionarioFile) {
         const workbook = new ExcelJS.Workbook();
@@ -21,28 +20,21 @@ export const generarInformeEtapa2 = async (files, etapaSeleccionada, onProgress)
                 }
             }
         });
-        console.log('Diccionario completo:', diccionario);
     }
     onProgress(20);
 
-    // Leer archivo .dcf
     const dcfFile = files.find(file => file.name.endsWith('.dcf'));
     if (!dcfFile) {
         throw new Error("No se encontró un archivo .dcf");
     }
     dcfContent = await dcfFile.text();
-    console.log('Contenido del archivo .dcf:', dcfContent);
     onProgress(40);
 
-    // Procesar el contenido del archivo .dcf
     const lines = dcfContent.split('\n').filter(line => line.trim() !== '');
     const tablas = procesarLineas(lines, diccionario);
     onProgress(60);
 
-    // Generar PDF
     const doc = new jsPDF();
-    
-    // Añadir título general
     doc.setFontSize(16);
     doc.text(`Informe de Pesos de Evidencia - ${etapaSeleccionada.name}`, doc.internal.pageSize.width / 2, 15, { align: 'center' });
 
@@ -51,19 +43,16 @@ export const generarInformeEtapa2 = async (files, etapaSeleccionada, onProgress)
             doc.addPage();
         }
 
-        let yPos = 30; // Empezamos más abajo para dejar espacio al título general
+        let yPos = 30; 
 
-        // Añadir título de la tabla
         doc.setFontSize(14);
         doc.text(tabla.titulo, 14, yPos);
         yPos += 10;
 
-        // Añadir subtítulo (datos a tratar)
         doc.setFontSize(12);
         doc.text(tabla.datosATratar, 14, yPos);
         yPos += 10;
 
-        // Generar tabla
         doc.autoTable({
             head: [['Rangos', 'Pesos']],
             body: tabla.datos,
@@ -73,16 +62,12 @@ export const generarInformeEtapa2 = async (files, etapaSeleccionada, onProgress)
         });
 
         yPos = doc.lastAutoTable.finalY + 10;
-
-        // Añadir gráfico al PDF
         generarGrafico(doc, tabla.datos, yPos);
+        yPos += 105; 
+        doc.setFontSize(9);
 
-        // Añadir resumen de rangos y valores
-        yPos += 110; // Aumentar espacio después del gráfico
-
-        const resumen = generarResumen(tabla.datos);
-        resumen.forEach(line => {
-            doc.setFontSize(9);
+        const resumenLines = doc.splitTextToSize(tabla.resumen, 180);
+        resumenLines.forEach(line => {
             doc.text(line, 14, yPos);
             yPos += 5;
         });
@@ -96,14 +81,14 @@ export const generarInformeEtapa2 = async (files, etapaSeleccionada, onProgress)
 const generarGrafico = (doc, datos, yPos) => {
     const width = 180;
     const height = 100;
-    const margin = { left: 40, right: 10, top: 10, bottom: 20 }; // Aumentar margen izquierdo y inferior
+    const margin = { left: 40, right: 10, top: 10, bottom: 20 };
 
     const xValues = datos.map(d => parseFloat(d[0].split(':')[1]));
     const yValues = datos.map(d => parseFloat(d[1]));
     const xMin = Math.min(...xValues);
     const xMax = Math.max(...xValues);
-    const yMin = Math.min(...yValues);
-    const yMax = Math.max(...yValues);
+    const yMin = Math.min(Math.min(...yValues), -1);
+    const yMax = Math.max(Math.max(...yValues), 1);
 
     const logScale = (value) => Math.log10(Math.max(value, 0.1));
     const toX = (value) => margin.left + ((logScale(value) - logScale(xMin)) / (logScale(xMax) - logScale(xMin))) * (width - margin.left - margin.right);
@@ -113,7 +98,6 @@ const generarGrafico = (doc, datos, yPos) => {
     doc.setDrawColor(200);
     doc.setLineWidth(0.1);
 
-    // Dibujar ejes Y y etiquetas
     const yTicks = 5;
     for (let i = 0; i <= yTicks; i++) {
         const value = yMin + (i / yTicks) * (yMax - yMin);
@@ -122,7 +106,6 @@ const generarGrafico = (doc, datos, yPos) => {
         doc.text(value.toFixed(1), margin.left - 5, y, { align: 'right' });
     }
 
-    // Dibujar ejes X y etiquetas
     const xTickValues = [xMin, 1000, 10000, xMax];
     xTickValues.forEach(value => {
         const x = toX(value);
@@ -132,10 +115,22 @@ const generarGrafico = (doc, datos, yPos) => {
         }
     });
 
-    // Dibujar líneas y puntos
-    doc.setDrawColor(0);
+    doc.setDrawColor(150);
+    doc.setLineDash([2, 2]);
+    doc.line(margin.left, toY(1), width - margin.right, toY(1));
+    doc.line(margin.left, toY(-1), width - margin.right, toY(-1));
+    doc.setLineDash();
+
+
     doc.setLineWidth(0.5);
-    doc.setFillColor(0, 0, 255);
+
+    const getColor = (value) => {
+        if (value >= 1) return [0, 255, 0]; 
+        if (value > -1 && value < 1) return [255, 165, 0];  
+        return [255, 0, 0];  
+    };
+
+    let prevCategory = getColor(parseFloat(datos[0][1]));
 
     for (let i = 0; i < datos.length - 1; i++) {
         const x1 = toX(parseFloat(datos[i][0].split(':')[1]));
@@ -143,26 +138,56 @@ const generarGrafico = (doc, datos, yPos) => {
         const x2 = toX(parseFloat(datos[i + 1][0].split(':')[1]));
         const y2 = toY(parseFloat(datos[i + 1][1]));
 
+        const currentColor = getColor(parseFloat(datos[i][1]));
+        doc.setDrawColor(...currentColor);
+        doc.setFillColor(...currentColor);
+
         if (!isNaN(x1) && !isNaN(y1) && !isNaN(x2) && !isNaN(y2)) {
             doc.line(x1, y1, x2, y1);
             doc.setLineDash([2, 2], 0);
             doc.line(x2, y1, x2, y2);
             doc.setLineDash();
         }
+
+        doc.circle(x1, y1, 1, 'F');
+
+        if (i > 0 && currentColor.toString() !== prevCategory.toString()) {
+            doc.setDrawColor(100);
+            doc.setLineDash([4, 2]);
+            doc.line(x1, yPos + margin.top, x1, yPos + height - margin.bottom);
+            doc.setLineDash();
+        }
+
+        prevCategory = currentColor;
     }
 
-    datos.forEach(d => {
-        const x = toX(parseFloat(d[0].split(':')[1]));
-        const y = toY(parseFloat(d[1]));
-        if (!isNaN(x) && !isNaN(y)) {
-            doc.circle(x, y, 1, 'F');
-        }
-    });
+    const lastX = toX(parseFloat(datos[datos.length - 1][0].split(':')[1]));
+    const lastY = toY(parseFloat(datos[datos.length - 1][1]));
+    const lastColor = getColor(parseFloat(datos[datos.length - 1][1]));
+    doc.setFillColor(...lastColor);
+    doc.circle(lastX, lastY, 1, 'F');
 
-    // Etiquetas de ejes
     doc.setFontSize(9);
+    doc.setTextColor(0);
     doc.text('Rangos', width / 2 + 15, yPos + height - 5, { align: 'center' });
-    doc.text('Pesos', 20, yPos + height / 2 , { angle: 90, align: 'center' });
+    doc.text('Pesos', 20, yPos + height / 2, { angle: 90, align: 'center' });
+
+    doc.setFontSize(8);
+    const legendX = width - margin.right + 10; 
+    const legendStartY = yPos + margin.top + 20; 
+    const legendSpacing = 15; 
+
+    const drawLegendItem = (color, text, index) => {
+        const itemY = legendStartY + index * legendSpacing;
+        doc.setFillColor(...color);
+        doc.circle(legendX, itemY, 2, 'F');
+        doc.setTextColor(0);
+        doc.text(text, legendX + 5, itemY + 1);
+    };
+
+    drawLegendItem([0, 255, 0], 'Favorece', 0);
+    drawLegendItem([255, 165, 0], 'Neutro', 1);
+    drawLegendItem([255, 0, 0], 'Repele', 2);
 };
 
 const procesarLineas = (lines, diccionario) => {
@@ -177,7 +202,7 @@ const procesarLineas = (lines, diccionario) => {
             const partesRangos = lineaRangos.split(/\s+/);
             const rangos = partesRangos.slice(1);
             const parametro = partesRangos[0].split('/')[0].slice(1) + '/' + partesRangos[0].split('/')[1];
-
+            
             const partesPesos = linea.split(/\s+/);
             const [descripcion, ...pesos] = partesPesos;
 
@@ -195,10 +220,13 @@ const procesarLineas = (lines, diccionario) => {
                 return null;
             }).filter(item => item !== null);
 
+            const resumenGenerado = generarResumen(datos, titulo);
+
             tablas.push({
                 titulo,
                 datosATratar: parametro,
                 datos,
+                resumen: resumenGenerado 
             });
 
             lineaRangos = null;
@@ -207,21 +235,55 @@ const procesarLineas = (lines, diccionario) => {
     return tablas;
 };
 
-const generarResumen = (datos) => {
-    const resumen = [];
+const generarResumen = (datos, titulo) => {
+    const cambios = [];
     let rangoInicio = datos[0][0].split(':')[0];
     let efectoActual = getEfecto(parseFloat(datos[0][1]));
 
     for (let i = 1; i < datos.length; i++) {
         const efecto = getEfecto(parseFloat(datos[i][1]));
         if (efecto !== efectoActual) {
-            resumen.push(`El rango ${rangoInicio}:${datos[i - 1][0].split(':')[1]} ${efectoActual}.`);
+            cambios.push({
+                rango: `${rangoInicio}:${datos[i - 1][0].split(':')[1]}`,
+                efecto: efectoActual
+            });
             rangoInicio = datos[i][0].split(':')[0];
             efectoActual = efecto;
         }
     }
-    resumen.push(`Del rango ${rangoInicio}:${datos[datos.length - 1][0].split(':')[1]} ${efectoActual}.`);
-    return resumen;
+    cambios.push({
+        rango: `${rangoInicio}:${datos[datos.length - 1][0].split(':')[1]}`,
+        efecto: efectoActual
+    });
+
+    let descripcion = `En la ${titulo}, observamos que `;
+
+    cambios.forEach((cambio, index) => {
+        const [inicio, fin] = cambio.rango.split(':');
+        let descripcionEfecto;
+
+        switch (cambio.efecto) {
+            case "favorece el cambio":
+                descripcionEfecto = "el cambio es claramente favorable, lo que indica una tendencia positiva en este rango de valores";
+                break;
+            case "no afecta el cambio":
+                descripcionEfecto = "el cambio se mantiene en una posición neutral, sugiriendo que dentro de este intervalo, los efectos son mínimos o poco significativos para promover variaciones importantes";
+                break;
+            case "repele el cambio":
+                descripcionEfecto = "se evidencia una clara repulsión al cambio, lo que refleja una resistencia fuerte a cualquier tipo de alteración significativa en este rango";
+                break;
+        }
+
+        if (index === 0) {
+            descripcion += `desde el punto inicial ${inicio} hasta el ${fin}, ${descripcionEfecto}. `;
+        } else if (index === cambios.length - 1) {
+            descripcion += `Finalmente, a partir del punto ${inicio} hasta el ${fin}, ${descripcionEfecto}.`;
+        } else {
+            descripcion += `Luego, entre los puntos ${inicio} y ${fin}, ${descripcionEfecto}. `;
+        }
+    });
+
+    return descripcion;
 };
 
 const getEfecto = (pesoNum) => {

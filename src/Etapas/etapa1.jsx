@@ -11,7 +11,7 @@ export const generarInformeEtapa1 = async (files, etapaSeleccionada, onProgress)
     onProgress(5);
 
     // Cargar el diccionario
-    const diccionarioFile = files.find(file => file.name.endsWith('.xlsm') || file.name.endsWith('.xlsx'));
+    const diccionarioFile = files.find(file => file.name.endsWith('.xlsx'));
     if (diccionarioFile) {
         const workbook = new ExcelJS.Workbook();
         await workbook.xlsx.load(await diccionarioFile.arrayBuffer());
@@ -87,7 +87,7 @@ export const generarInformeEtapa1 = async (files, etapaSeleccionada, onProgress)
 
     // Crear documento PDF
     const doc = new jsPDF();
-    let title = `Informe de cambios por área - ${etapaSeleccionada.name}`;
+    let title = `Informe de Matriz de Transición - ${etapaSeleccionada.name}`;
     doc.setTextColor(100);
     doc.setFontSize(16);
     doc.text(title, doc.internal.pageSize.width / 2, 20, { align: 'center' });
@@ -268,7 +268,7 @@ export const generarInformeEtapa1 = async (files, etapaSeleccionada, onProgress)
     // Agregar título para los gráficos individuales
     doc.setFontSize(16);
     doc.setTextColor(100);
-    doc.text('Gráficos individuales de Cambios por Área', doc.internal.pageSize.width / 2, 30, { align: 'center' });
+    doc.text('Gráficos individuales de  Matriz de Transición', doc.internal.pageSize.width / 2, 30, { align: 'center' });
 
     // Agregar gráficos al PDF
     let isFirstChart = true;
@@ -307,7 +307,7 @@ export const generarInformeEtapa1 = async (files, etapaSeleccionada, onProgress)
     doc.addPage();
     doc.setFontSize(16);
     doc.setTextColor(100);
-    doc.text('Gráfico General de Cambios por Área', doc.internal.pageSize.width / 2, 30, { align: 'center' });
+    doc.text('Gráfico General de Matriz de Transición', doc.internal.pageSize.width / 2, 30, { align: 'center' });
 
     const chartDataGeneral = allCharts[allCharts.length - 1];
     if (chartDataGeneral) {

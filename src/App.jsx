@@ -18,7 +18,7 @@ function App() {
     const [currentStage, setCurrentStage] = useState(1);
     const [title, setTitle] = useState('Matriz de Transición');
     const [etapas, setEtapas] = useState([
-        { id: 1, name: "Etapa 1", title: 'Matriz de transición' }, // Cambios por área
+        { id: 1, name: "Etapa 1", title: 'Matriz de transición' }, 
         { id: 2, name: "Etapa 2", title: 'Pesos de evidencia' },
     ]);
 
@@ -59,17 +59,27 @@ function App() {
         );
     };
 
-    const onDrop = useCallback((acceptedFiles) => {
+    const onDrop = useCallback((acceptedFiles, rejectedFiles) => {
         if (acceptedFiles.length > 0) {
-            setFile(acceptedFiles[0]);
+          const file = acceptedFiles[0];
+          const fileExtension = file.name.split('.').pop().toLowerCase();
+          
+          if ((currentStage === 1 && fileExtension === 'csv') || 
+              (currentStage === 2 && fileExtension === 'dcf')) {
+            setFile(file);
+          } else {
+            alert(`Por favor, seleccione un archivo ${currentStage === 1 ? 'CSV' : 'DCF'} válido.`);
+          }
+        } else if (rejectedFiles.length > 0) {
+          alert(`Por favor, seleccione un archivo ${currentStage === 1 ? 'CSV' : 'DCF'} válido.`);
         }
-    }, []);
+      }, [currentStage]);
 
     const { getRootProps, getInputProps, isDragActive } = useDropzone({
         onDrop,
         accept: currentStage === 1
             ? { 'text/csv': ['.csv'] }
-            : { 'application/octet-stream': ['.dcf'] },
+            : { 'application/x-dcf': ['.dcf'] },
         maxFiles: 1,
         multiple: false
     });
@@ -80,7 +90,7 @@ function App() {
         } else {
             const input = document.createElement('input');
             input.type = 'file';
-            input.accept = '.xlsx,.xlsm';
+            input.accept = '.xlsx';
             input.onchange = (e) => {
                 const file = e.target.files[0];
                 if (file) {
