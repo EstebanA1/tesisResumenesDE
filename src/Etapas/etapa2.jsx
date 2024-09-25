@@ -43,7 +43,7 @@ export const generarInformeEtapa2 = async (files, etapaSeleccionada, onProgress)
             doc.addPage();
         }
 
-        let yPos = 30; 
+        let yPos = 30;
 
         doc.setFontSize(14);
         doc.text(tabla.titulo, 14, yPos);
@@ -63,7 +63,7 @@ export const generarInformeEtapa2 = async (files, etapaSeleccionada, onProgress)
 
         yPos = doc.lastAutoTable.finalY + 10;
         generarGrafico(doc, tabla.datos, yPos);
-        yPos += 105; 
+        yPos += 105;
         doc.setFontSize(9);
 
         const resumenLines = doc.splitTextToSize(tabla.resumen, 180);
@@ -83,17 +83,39 @@ const generarGrafico = (doc, datos, yPos) => {
     const height = 100;
     const margin = { left: 40, right: 10, top: 10, bottom: 20 };
 
-    const xValues = datos.map(d => parseFloat(d[0].split(':')[1]));
+    const xValues = datos.flatMap(d => d[0].split(':').map(parseFloat));
     const yValues = datos.map(d => parseFloat(d[1]));
+
     const xMin = Math.min(...xValues);
     const xMax = Math.max(...xValues);
     const yMin = Math.min(Math.min(...yValues), -1);
     const yMax = Math.max(Math.max(...yValues), 1);
 
-    const logScale = (value) => Math.log10(Math.max(value, 0.1));
-    const toX = (value) => margin.left + ((logScale(value) - logScale(xMin)) / (logScale(xMax) - logScale(xMin))) * (width - margin.left - margin.right);
+    const minXThreshold = 150;
+
+    const logScale = (value) => Math.log10(Math.max(value, minXThreshold));
+
+    const toX = (value) => {
+        if (value <= 0) return margin.left;  
+        const logMin = logScale(minXThreshold);
+        const logMax = logScale(xMax);
+        const logValue = logScale(value);
+        return margin.left + ((logValue - logMin) / (logMax - logMin)) * (width - margin.left - margin.right);
+    };
     const toY = (value) => yPos + margin.top + (height - margin.top - margin.bottom) - ((value - yMin) / (yMax - yMin)) * (height - margin.top - margin.bottom);
 
+    const generarTicksX = (xMin, xMax) => {
+        const range = xMax - xMin;
+        if (range > 10000) {
+            return [xMin, 1000, 10000, xMax]; 
+        } else if (range > 1000) {
+            return [xMin, 500, 1000, xMax]; 
+        } else {
+            return [xMin, xMax];  
+        }
+    };
+
+    const xTickValues = generarTicksX(xMin, xMax);
     doc.setFontSize(8);
     doc.setDrawColor(200);
     doc.setLineWidth(0.1);
@@ -106,7 +128,6 @@ const generarGrafico = (doc, datos, yPos) => {
         doc.text(value.toFixed(1), margin.left - 5, y, { align: 'right' });
     }
 
-    const xTickValues = [xMin, 1000, 10000, xMax];
     xTickValues.forEach(value => {
         const x = toX(value);
         if (x >= margin.left && x <= width - margin.right) {
@@ -121,51 +142,47 @@ const generarGrafico = (doc, datos, yPos) => {
     doc.line(margin.left, toY(-1), width - margin.right, toY(-1));
     doc.setLineDash();
 
-
     doc.setLineWidth(0.5);
 
     const getColor = (value) => {
         if (value >= 1) return [0, 255, 0]; 
-        if (value > -1 && value < 1) return [255, 165, 0];  
-        return [255, 0, 0];  
+        if (value > -1 && value < 1) return [255, 165, 0]; 
+        return [255, 0, 0]; 
     };
 
-    let prevCategory = getColor(parseFloat(datos[0][1]));
+    for (let i = 0; i < datos.length; i++) {
+        const [rangeStart, rangeEnd] = datos[i][0].split(':').map(parseFloat);
+        const peso = parseFloat(datos[i][1]);
 
-    for (let i = 0; i < datos.length - 1; i++) {
-        const x1 = toX(parseFloat(datos[i][0].split(':')[1]));
-        const y1 = toY(parseFloat(datos[i][1]));
-        const x2 = toX(parseFloat(datos[i + 1][0].split(':')[1]));
-        const y2 = toY(parseFloat(datos[i + 1][1]));
+        const x1 = toX(Math.max(rangeStart, 0)); 
+        const x2 = toX(rangeEnd);
+        const y = toY(peso);
 
-        const currentColor = getColor(parseFloat(datos[i][1]));
-        doc.setDrawColor(...currentColor);
-        doc.setFillColor(...currentColor);
+        const color = getColor(peso);
+        doc.setDrawColor(...color);
+        doc.setFillColor(...color);
 
-        if (!isNaN(x1) && !isNaN(y1) && !isNaN(x2) && !isNaN(y2)) {
-            doc.line(x1, y1, x2, y1);
-            doc.setLineDash([2, 2], 0);
-            doc.line(x2, y1, x2, y2);
+        doc.line(x1, y, x2, y);
+        doc.circle(x1, y, 1, 'F');
+
+        if (i < datos.length - 1) {
+            const nextPeso = parseFloat(datos[i + 1][1]);
+            const nextY = toY(nextPeso);
+            doc.setLineDash([2, 2]);
+            doc.line(x2, y, x2, nextY);
             doc.setLineDash();
         }
 
-        doc.circle(x1, y1, 1, 'F');
-
-        if (i > 0 && currentColor.toString() !== prevCategory.toString()) {
-            doc.setDrawColor(100);
-            doc.setLineDash([4, 2]);
-            doc.line(x1, yPos + margin.top, x1, yPos + height - margin.bottom);
-            doc.setLineDash();
+        if (i > 0) {
+            const prevColor = getColor(parseFloat(datos[i - 1][1]));
+            if (color.toString() !== prevColor.toString()) {
+                doc.setDrawColor(100);
+                doc.setLineDash([4, 2]);
+                doc.line(x1, yPos + margin.top, x1, yPos + height - margin.bottom);
+                doc.setLineDash();
+            }
         }
-
-        prevCategory = currentColor;
     }
-
-    const lastX = toX(parseFloat(datos[datos.length - 1][0].split(':')[1]));
-    const lastY = toY(parseFloat(datos[datos.length - 1][1]));
-    const lastColor = getColor(parseFloat(datos[datos.length - 1][1]));
-    doc.setFillColor(...lastColor);
-    doc.circle(lastX, lastY, 1, 'F');
 
     doc.setFontSize(9);
     doc.setTextColor(0);
@@ -173,9 +190,9 @@ const generarGrafico = (doc, datos, yPos) => {
     doc.text('Pesos', 20, yPos + height / 2, { angle: 90, align: 'center' });
 
     doc.setFontSize(8);
-    const legendX = width - margin.right + 10; 
-    const legendStartY = yPos + margin.top + 20; 
-    const legendSpacing = 15; 
+    const legendX = width - margin.right + 10;
+    const legendStartY = yPos + margin.top + 20;
+    const legendSpacing = 15;
 
     const drawLegendItem = (color, text, index) => {
         const itemY = legendStartY + index * legendSpacing;
@@ -190,6 +207,7 @@ const generarGrafico = (doc, datos, yPos) => {
     drawLegendItem([255, 0, 0], 'Repele', 2);
 };
 
+
 const procesarLineas = (lines, diccionario) => {
     const tablas = [];
     let lineaRangos = null;
@@ -202,7 +220,7 @@ const procesarLineas = (lines, diccionario) => {
             const partesRangos = lineaRangos.split(/\s+/);
             const rangos = partesRangos.slice(1);
             const parametro = partesRangos[0].split('/')[0].slice(1) + '/' + partesRangos[0].split('/')[1];
-            
+
             const partesPesos = linea.split(/\s+/);
             const [descripcion, ...pesos] = partesPesos;
 
@@ -226,7 +244,7 @@ const procesarLineas = (lines, diccionario) => {
                 titulo,
                 datosATratar: parametro,
                 datos,
-                resumen: resumenGenerado 
+                resumen: resumenGenerado
             });
 
             lineaRangos = null;
