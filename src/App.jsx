@@ -20,6 +20,7 @@ function App() {
     const [etapas, setEtapas] = useState([
         { id: 1, name: "Etapa 1", title: 'Matriz de transición' }, 
         { id: 2, name: "Etapa 2", title: 'Pesos de evidencia' },
+        { id: 3, name: "Etapa 3", title: 'Correlación de variables' },
     ]);
 
     const [showCarousel, setShowCarousel] = useState(false);
@@ -61,25 +62,26 @@ function App() {
 
     const onDrop = useCallback((acceptedFiles, rejectedFiles) => {
         if (acceptedFiles.length > 0) {
-          const file = acceptedFiles[0];
-          const fileExtension = file.name.split('.').pop().toLowerCase();
-          
-          if ((currentStage === 1 && fileExtension === 'csv') || 
-              (currentStage === 2 && fileExtension === 'dcf')) {
-            setFile(file);
-          } else {
-            alert(`Por favor, seleccione un archivo ${currentStage === 1 ? 'CSV' : 'DCF'} válido.`);
-          }
+            const file = acceptedFiles[0];
+            const fileExtension = file.name.split('.').pop().toLowerCase();
+            
+            if ((currentStage === 1 && fileExtension === 'csv') || 
+                (currentStage === 2 && fileExtension === 'dcf') ||
+                (currentStage === 3 && fileExtension === 'csv')) {
+                setFile(file);
+            } else {
+                alert(`Por favor, seleccione un archivo ${currentStage === 2 ? 'DCF' : 'CSV'} válido.`);
+            }
         } else if (rejectedFiles.length > 0) {
-          alert(`Por favor, seleccione un archivo ${currentStage === 1 ? 'CSV' : 'DCF'} válido.`);
+            alert(`Por favor, seleccione un archivo ${currentStage === 2 ? 'DCF' : 'CSV'} válido.`);
         }
-      }, [currentStage]);
+    }, [currentStage]);
 
     const { getRootProps, getInputProps, isDragActive } = useDropzone({
         onDrop,
-        accept: currentStage === 1
-            ? { 'text/csv': ['.csv'] }
-            : { 'application/x-dcf': ['.dcf'] },
+        accept: currentStage === 2 
+            ? { 'application/x-dcf': ['.dcf'] }
+            : { 'text/csv': ['.csv'] },
         maxFiles: 1,
         multiple: false
     });
@@ -203,8 +205,8 @@ function App() {
                             ) : (
                                 <p>
                                     {!file
-                                        ? `Arrastra y suelta un archivo ${currentStage === 1 ? 'CSV' : 'DCF'} aquí, o haz clic para seleccionarlo`
-                                        : `Archivo ${currentStage === 1 ? 'CSV' : 'DCF'} cargado. Puedes reemplazarlo arrastrando otro archivo aquí.`}
+                                        ? `Arrastra y suelta un archivo ${currentStage === 2 ? 'DCF' : 'CSV'} aquí, o haz clic para seleccionarlo`
+                                        : `Archivo ${currentStage === 2 ? 'DCF' : 'CSV'} cargado. Puedes reemplazarlo arrastrando otro archivo aquí.`}
                                 </p>
                             )}
                         </div>

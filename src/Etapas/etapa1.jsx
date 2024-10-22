@@ -10,7 +10,6 @@ export const generarInformeEtapa1 = async (files, etapaSeleccionada, onProgress)
 
     onProgress(5);
 
-    // Cargar el diccionario
     const diccionarioFile = files.find(file => file.name.endsWith('.xlsx'));
     if (diccionarioFile) {
         const workbook = new ExcelJS.Workbook();
@@ -45,7 +44,6 @@ export const generarInformeEtapa1 = async (files, etapaSeleccionada, onProgress)
 
     onProgress(15);
 
-    // Procesar archivo de cambios
     const cambiosFile = files.find(file => file.type === 'text/csv');
     if (cambiosFile) {
         const content = await cambiosFile.text();
@@ -85,14 +83,12 @@ export const generarInformeEtapa1 = async (files, etapaSeleccionada, onProgress)
 
     onProgress(35);
 
-    // Crear documento PDF
     const doc = new jsPDF();
     let title = `Informe de Matriz de Transición - ${etapaSeleccionada.name}`;
     doc.setTextColor(100);
     doc.setFontSize(16);
     doc.text(title, doc.internal.pageSize.width / 2, 20, { align: 'center' });
 
-    // Agregar explicación textual detallada
     yPos = 40;
     const lineHeight = 10;
     const marginRight = 180;
@@ -139,12 +135,9 @@ export const generarInformeEtapa1 = async (files, etapaSeleccionada, onProgress)
         onProgress(35 + Math.floor((areasProcesadas / totalAreas) * 15));
     }
 
-    // Añadir salto de página después de los resúmenes
     doc.addPage();
-
     onProgress(50);
 
-    // Función para crear imágenes de gráficos de forma asíncrona
     const createChartImage = (area, cambios, isGeneral = false) => {
         return new Promise((resolve) => {
             const baseWidth = 400;
@@ -175,7 +168,7 @@ export const generarInformeEtapa1 = async (files, etapaSeleccionada, onProgress)
                     responsive: false,
                     maintainAspectRatio: false,
                     indexAxis: 'x',
-                    animation: false, // Desactivar animaciones
+                    animation: false,
                     plugins: {
                         tooltip: {
                             callbacks: {
@@ -242,7 +235,6 @@ export const generarInformeEtapa1 = async (files, etapaSeleccionada, onProgress)
                 }
             });
 
-            // Usar requestAnimationFrame para asegurar que el canvas se renderice completamente
             requestAnimationFrame(() => {
                 const imgData = canvas.toDataURL('image/png');
                 resolve({ imgData, width: chartWidth, height: chartHeight });
@@ -250,7 +242,6 @@ export const generarInformeEtapa1 = async (files, etapaSeleccionada, onProgress)
         });
     };
 
-    // Generar todos los gráficos de forma asíncrona
     const generateAllCharts = async () => {
         const chartPromises = Object.entries(cambiosPorArea).map(([area, cambios]) =>
             createChartImage(area, cambios, false)
@@ -262,22 +253,19 @@ export const generarInformeEtapa1 = async (files, etapaSeleccionada, onProgress)
         return Promise.all(chartPromises);
     };
 
-    // Generar todos los gráficos
     const allCharts = await generateAllCharts();
 
-    // Agregar título para los gráficos individuales
     doc.setFontSize(16);
     doc.setTextColor(100);
     doc.text('Gráficos individuales de  Matriz de Transición', doc.internal.pageSize.width / 2, 30, { align: 'center' });
 
-    // Agregar gráficos al PDF
     let isFirstChart = true;
     for (let i = 0; i < allCharts.length - 1; i++) {
         const chartData = allCharts[i];
         if (!isFirstChart) {
             doc.addPage();
         } else {
-            yPos = 40; // Ajustar la posición inicial para el primer gráfico
+            yPos = 40; 
         }
 
         if (chartData) {
@@ -288,7 +276,7 @@ export const generarInformeEtapa1 = async (files, etapaSeleccionada, onProgress)
                 let imgWidth = pdfWidth - 20;
                 let imgHeight = imgWidth / aspectRatio;
 
-                if (imgHeight > pdfHeight - 60) { // Ajustar para dejar espacio para el título
+                if (imgHeight > pdfHeight - 60) { 
                     imgHeight = pdfHeight - 60;
                     imgWidth = imgHeight * aspectRatio;
                 }
@@ -303,7 +291,6 @@ export const generarInformeEtapa1 = async (files, etapaSeleccionada, onProgress)
         onProgress(50 + Math.floor(((i + 1) / allCharts.length) * 40));
     }
 
-    // Agregar gráfico general
     doc.addPage();
     doc.setFontSize(16);
     doc.setTextColor(100);

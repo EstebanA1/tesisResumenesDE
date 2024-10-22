@@ -44,7 +44,6 @@ export const generarInformeEtapa2 = async (files, etapaSeleccionada, onProgress)
         }
 
         let yPos = 30;
-
         doc.setFontSize(14);
         doc.text(tabla.titulo, 14, yPos);
         yPos += 10;
@@ -57,17 +56,31 @@ export const generarInformeEtapa2 = async (files, etapaSeleccionada, onProgress)
             head: [['Rangos', 'Pesos']],
             body: tabla.datos,
             startY: yPos,
-            margin: { bottom: 50 },
+            margin: { bottom: 30 },
             styles: { cellPadding: 1.5, fontSize: 8 },
         });
 
-        yPos = doc.lastAutoTable.finalY + 10;
+        yPos = doc.lastAutoTable.finalY;
         generarGrafico(doc, tabla.datos, yPos);
-        yPos += 105;
-        doc.setFontSize(9);
+        const espacioDisponible = doc.internal.pageSize.height - (yPos + 110 + 20);
 
-        const resumenLines = doc.splitTextToSize(tabla.resumen, 180);
-        resumenLines.forEach(line => {
+        doc.setFontSize(9);
+        const resumenClassicoLines = doc.splitTextToSize(tabla.resumen.resumenClasico, 180);
+        const alturaResumen = resumenClassicoLines.length * 5;
+
+        if (alturaResumen > espacioDisponible + 10) {
+            doc.addPage();
+            yPos = 30;
+        } else {
+            yPos += 110;
+        }
+
+        doc.setFontSize(14);
+        doc.text("Resumen", 14, yPos);
+        yPos += 10;
+
+        doc.setFontSize(9);
+        resumenClassicoLines.forEach(line => {
             doc.text(line, 14, yPos);
             yPos += 5;
         });
@@ -91,28 +104,58 @@ const generarGrafico = (doc, datos, yPos) => {
     const yMin = Math.min(Math.min(...yValues), -1);
     const yMax = Math.max(Math.max(...yValues), 1);
 
-    const minXThreshold = 150;
+    const getMinXThreshold = (min, max) => {
+        const range = max - min;
+        if (range > 100 && range <= 200 && min === 0) {
+            return 1;
+        }
 
-    const logScale = (value) => Math.log10(Math.max(value, minXThreshold));
+        if (max <= 20) return 0.7;
+        if (max <= 100) return 5;
+        // if (max <= 500) return 5;
+        // if (max <= 1000) return 10;
+        // if (max <= 5000) return 50;
+        if (max <= 10000) return 50;
+        // if (max <= 30000) return 100;
+        return Math.pow(10, Math.floor(Math.log10(range / 100)));
+    };
+
+    const minXThreshold = getMinXThreshold(xMin, xMax);
+
+    const logScale = (value) => {
+        if (value <= minXThreshold) return Math.log10(minXThreshold);
+        return Math.log10(value);
+    };
 
     const toX = (value) => {
-        if (value <= 0) return margin.left;  
-        const logMin = logScale(minXThreshold);
+        if (value <= minXThreshold) return margin.left;
+        const logMin = logScale(Math.max(xMin, minXThreshold));
         const logMax = logScale(xMax);
         const logValue = logScale(value);
         return margin.left + ((logValue - logMin) / (logMax - logMin)) * (width - margin.left - margin.right);
     };
-    const toY = (value) => yPos + margin.top + (height - margin.top - margin.bottom) - ((value - yMin) / (yMax - yMin)) * (height - margin.top - margin.bottom);
+
+    const toY = (value) => {
+        const clampedValue = Math.max(yMin, Math.min(yMax, value));
+        return yPos + margin.top + (height - margin.top - margin.bottom) -
+            ((clampedValue - yMin) / (yMax - yMin)) * (height - margin.top - margin.bottom);
+    };
 
     const generarTicksX = (xMin, xMax) => {
         const range = xMax - xMin;
+        let ticks = [];
+
         if (range > 10000) {
-            return [xMin, 1000, 10000, xMax]; 
+            ticks = [xMin, 1000, 10000, xMax];
         } else if (range > 1000) {
-            return [xMin, 500, 1000, xMax]; 
+            ticks = [xMin, Math.round(range / 4), Math.round(range / 2), xMax];
+        } else if (range > 100) {
+            ticks = [xMin, Math.round(range / 2), xMax];
         } else {
-            return [xMin, xMax];  
+            ticks = [xMin, xMax];
         }
+
+        return ticks.filter(tick => tick >= 0);
     };
 
     const xTickValues = generarTicksX(xMin, xMax);
@@ -124,13 +167,15 @@ const generarGrafico = (doc, datos, yPos) => {
     for (let i = 0; i <= yTicks; i++) {
         const value = yMin + (i / yTicks) * (yMax - yMin);
         const y = toY(value);
-        doc.line(margin.left, y, width - margin.right, y);
-        doc.text(value.toFixed(1), margin.left - 5, y, { align: 'right' });
+        if (!isNaN(y)) {
+            doc.line(margin.left, y, width - margin.right, y);
+            doc.text(value.toFixed(1), margin.left - 5, y, { align: 'right' });
+        }
     }
 
     xTickValues.forEach(value => {
         const x = toX(value);
-        if (x >= margin.left && x <= width - margin.right) {
+        if (!isNaN(x) && x >= margin.left && x <= width - margin.right) {
             doc.line(x, yPos + height - margin.bottom, x, yPos + height - margin.bottom + 5);
             doc.text(value.toString(), x, yPos + height - margin.bottom + 10, { align: 'center' });
         }
@@ -145,42 +190,41 @@ const generarGrafico = (doc, datos, yPos) => {
     doc.setLineWidth(0.5);
 
     const getColor = (value) => {
-        if (value >= 1) return [0, 255, 0]; 
-        if (value > -1 && value < 1) return [255, 165, 0]; 
-        return [255, 0, 0]; 
+        if (value >= 1) return [0, 255, 0];
+        if (value > -1 && value < 1) return [255, 165, 0];
+        return [255, 0, 0];
     };
 
     for (let i = 0; i < datos.length; i++) {
-        const [rangeStart, rangeEnd] = datos[i][0].split(':').map(parseFloat);
-        const peso = parseFloat(datos[i][1]);
+        try {
+            const [rangeStart, rangeEnd] = datos[i][0].split(':').map(parseFloat);
+            const peso = parseFloat(datos[i][1]);
 
-        const x1 = toX(Math.max(rangeStart, 0)); 
-        const x2 = toX(rangeEnd);
-        const y = toY(peso);
+            const x1 = toX(Math.max(rangeStart, minXThreshold));
+            const x2 = toX(Math.max(rangeEnd, minXThreshold));
+            const y = toY(peso);
 
-        const color = getColor(peso);
-        doc.setDrawColor(...color);
-        doc.setFillColor(...color);
+            if (!isNaN(x1) && !isNaN(x2) && !isNaN(y)) {
+                const color = getColor(peso);
+                doc.setDrawColor(...color);
+                doc.setFillColor(...color);
 
-        doc.line(x1, y, x2, y);
-        doc.circle(x1, y, 1, 'F');
+                doc.line(x1, y, x2, y);
+                doc.circle(x1, y, 1, 'F');
 
-        if (i < datos.length - 1) {
-            const nextPeso = parseFloat(datos[i + 1][1]);
-            const nextY = toY(nextPeso);
-            doc.setLineDash([2, 2]);
-            doc.line(x2, y, x2, nextY);
-            doc.setLineDash();
-        }
-
-        if (i > 0) {
-            const prevColor = getColor(parseFloat(datos[i - 1][1]));
-            if (color.toString() !== prevColor.toString()) {
-                doc.setDrawColor(100);
-                doc.setLineDash([4, 2]);
-                doc.line(x1, yPos + margin.top, x1, yPos + height - margin.bottom);
-                doc.setLineDash();
+                if (i < datos.length - 1) {
+                    const nextPeso = parseFloat(datos[i + 1][1]);
+                    const nextY = toY(nextPeso);
+                    if (!isNaN(nextY)) {
+                        doc.setLineDash([2, 2]);
+                        doc.line(x2, y, x2, nextY);
+                        doc.setLineDash();
+                    }
+                }
             }
+        } catch (error) {
+            console.warn('Error al dibujar línea:', error);
+            continue;
         }
     }
 
@@ -254,6 +298,13 @@ const procesarLineas = (lines, diccionario) => {
 };
 
 const generarResumen = (datos, titulo) => {
+    const cambiosClasicos = generarCambiosClasicos(datos);
+    const resumenClasico = generarResumenClasico(cambiosClasicos, titulo);
+
+    return { resumenClasico };
+};
+
+const generarCambiosClasicos = (datos) => {
     const cambios = [];
     let rangoInicio = datos[0][0].split(':')[0];
     let efectoActual = getEfecto(parseFloat(datos[0][1]));
@@ -273,31 +324,56 @@ const generarResumen = (datos, titulo) => {
         rango: `${rangoInicio}:${datos[datos.length - 1][0].split(':')[1]}`,
         efecto: efectoActual
     });
+    return cambios;
+};
 
+const generarResumenClasico = (cambios, titulo) => {
     let descripcion = `En la ${titulo}, observamos que `;
 
-    cambios.forEach((cambio, index) => {
-        const [inicio, fin] = cambio.rango.split(':');
+    // Agrupar cambios por efecto
+    const cambiosAgrupados = cambios.reduce((acc, cambio) => {
+        if (!acc[cambio.efecto]) {
+            acc[cambio.efecto] = [];
+        }
+        acc[cambio.efecto].push(cambio.rango);
+        return acc;
+    }, {});
+
+    const efectos = Object.keys(cambiosAgrupados);
+    
+    efectos.forEach((efecto, index) => {
+        const rangos = cambiosAgrupados[efecto];
         let descripcionEfecto;
 
-        switch (cambio.efecto) {
+        switch (efecto) {
             case "favorece el cambio":
-                descripcionEfecto = "el cambio es claramente favorable, lo que indica una tendencia positiva en este rango de valores";
+                descripcionEfecto = "el cambio es claramente favorable, lo que indica una tendencia positiva";
                 break;
             case "no afecta el cambio":
-                descripcionEfecto = "el cambio se mantiene en una posición neutral, sugiriendo que dentro de este intervalo, los efectos son mínimos o poco significativos para promover variaciones importantes";
+                descripcionEfecto = "el cambio se mantiene en una posición neutral, sugiriendo que los efectos son mínimos o poco significativos para promover variaciones importantes";
                 break;
             case "repele el cambio":
-                descripcionEfecto = "se evidencia una clara repulsión al cambio, lo que refleja una resistencia fuerte a cualquier tipo de alteración significativa en este rango";
+                descripcionEfecto = "se evidencia una clara repulsión al cambio, lo que refleja una resistencia fuerte a cualquier tipo de alteración significativa";
                 break;
         }
 
-        if (index === 0) {
-            descripcion += `desde el punto inicial ${inicio} hasta el ${fin}, ${descripcionEfecto}. `;
-        } else if (index === cambios.length - 1) {
-            descripcion += `Finalmente, a partir del punto ${inicio} hasta el ${fin}, ${descripcionEfecto}.`;
+        let rangoDescripcion = rangos.map(rango => {
+            const [inicio, fin] = rango.split(':');
+            return `${inicio} hasta ${fin}`;
+        }).join(' y desde ');
+
+        if (rangos.length > 1) {
+            rangoDescripcion = `desde ${rangoDescripcion}`;
         } else {
-            descripcion += `Luego, entre los puntos ${inicio} y ${fin}, ${descripcionEfecto}. `;
+            rangoDescripcion = `en el rango de ${rangoDescripcion}`;
+        }
+
+        if (index === 0) {
+            descripcion += `${rangoDescripcion}, ${descripcionEfecto}. `;
+        } else if (index === efectos.length - 1) {
+            descripcion += `Finalmente, ${rangoDescripcion}, ${descripcionEfecto}.`;
+        } else {
+            descripcion += `Luego, ${rangoDescripcion}, ${descripcionEfecto}. `;
         }
     });
 
@@ -313,3 +389,4 @@ const getEfecto = (pesoNum) => {
         return "repele el cambio";
     }
 };
+
