@@ -330,7 +330,7 @@ const generarCambiosClasicos = (datos) => {
 const generarResumenClasico = (cambios, titulo) => {
     let descripcion = `En la ${titulo}, observamos que `;
 
-    // Agrupar cambios por efecto
+
     const cambiosAgrupados = cambios.reduce((acc, cambio) => {
         if (!acc[cambio.efecto]) {
             acc[cambio.efecto] = [];
