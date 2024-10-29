@@ -10,6 +10,7 @@ import Box from '@mui/material/Box';
 import DeleteIcon from '@mui/icons-material/Delete';
 import ArrowForwardIosIcon from '@mui/icons-material/ArrowForwardIos';
 import ArrowBackIosIcon from '@mui/icons-material/ArrowBackIos';
+import AccountCircleIcon from '@mui/icons-material/AccountCircle';
 
 import imagen1 from '../src/imagenes/imagen1.webp';
 import imagen2 from '../src/imagenes/imagen2.webp';
@@ -182,6 +183,11 @@ function App() {
                 </div>
             </nav>
             <h1 className="title-container">{title}</h1>
+
+            <button className="accountIcon">
+                <AccountCircleIcon />
+            </button>
+            
             <button
                 className={`load-files-button ${dictionary ? 'dictionary-loaded' : ''} ${shakeElements.dictionary ? 'shake' : ''}`}
                 onClick={handleDictionaryAction}
