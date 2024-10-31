@@ -15,7 +15,7 @@ const generateCorrelationGraph = (correlationData, threshold = 0.25) => {
 
     const width = 1200;
     const height = 1200;
-    const radius = height * 0.35;
+    const radius = height * 0.35 + nodeArray.length * 10;
     const center = { x: width / 2, y: height / 2 };
     const nodePositions = {};
     const angleStep = (2 * Math.PI) / nodeArray.length;
@@ -48,11 +48,11 @@ const generateCorrelationGraph = (correlationData, threshold = 0.25) => {
     </defs>`;
 
     svg += `<g class="connections">`;
-    
+
     correlationData.forEach(item => {
         const start = nodePositions[item.firstVariable];
         const end = nodePositions[item.secondVariable];
-        
+
         if (start && end) {
             const color = getEdgeColor(item.cramer);
             const width = getEdgeWidth(item.cramer);
@@ -63,16 +63,16 @@ const generateCorrelationGraph = (correlationData, threshold = 0.25) => {
             const dx = end.x - start.x;
             const dy = end.y - start.y;
             const dist = Math.sqrt(dx * dx + dy * dy);
-            
+
             const offset = dist * 0.15;
-            const nx = -dy / dist; 
+            const nx = -dy / dist;
             const ny = dx / dist;
-            
+
             const cpx = midX + offset * nx;
             const cpy = midY + offset * ny;
 
             const path = `M ${start.x},${start.y} Q ${cpx},${cpy} ${end.x},${end.y}`;
-            
+
             svg += `<path 
                 d="${path}"
                 stroke="${color}"
@@ -81,13 +81,15 @@ const generateCorrelationGraph = (correlationData, threshold = 0.25) => {
                 opacity="0.6"
             />`;
 
+            let cramerValue = item.cramer.toFixed(1) === "0.0" ? "0.1" : item.cramer.toFixed(1);
+
             svg += `<text>
-                <textPath href="#text-path-${item.firstVariable}-${item.secondVariable}" startOffset="50%" text-anchor="middle">
-                    <tspan dy="-5">
-                        <tspan dx="0" dy="0" fill="white" stroke="white" stroke-width="6">${item.cramer.toFixed(2)}</tspan>
-                        <tspan dx="-${item.cramer.toFixed(2).length * 8}" dy="0" fill="${color}">${item.cramer.toFixed(2)}</tspan>
-                    </tspan>
-                </textPath>
+              <textPath href="#text-path-${item.firstVariable}-${item.secondVariable}" startOffset="50%" text-anchor="middle">
+                <tspan dy="-5">
+                  <tspan dx="0" dy="0" stroke="white" stroke-width="2">${cramerValue}</tspan>
+                  <tspan dx="-${cramerValue.length * 8}" dy="5" fill="${color}">${cramerValue}</tspan>
+                </tspan>
+              </textPath>
             </text>`;
 
             svg += `<path 
@@ -98,13 +100,13 @@ const generateCorrelationGraph = (correlationData, threshold = 0.25) => {
             />`;
         }
     });
-    
+
     svg += `</g>`;
 
     svg += `<g class="nodes">`;
     nodeArray.forEach(node => {
         const pos = nodePositions[node];
-        const circleRadius = 30; 
+        const circleRadius = 30;
         svg += `
             <g class="node" transform="translate(${pos.x},${pos.y})">
                 <circle r="${circleRadius + 5}" fill="white" filter="url(#shadow)"/>
@@ -137,9 +139,8 @@ const svgToPngBase64 = (svg) => {
             img.onload = () => {
                 try {
                     const canvas = document.createElement('canvas');
-                    const scale = 4; 
-                    canvas.width = 2400; 
-                    canvas.height = 2400; 
+                    canvas.width = 2400;
+                    canvas.height = 2400;
 
                     const ctx = canvas.getContext('2d');
                     ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -184,7 +185,7 @@ const svgToPngBase64 = (svg) => {
     });
 };
 
-const addSummarySection = async (doc, correlationCategories, startY) => {
+const addSummarySection = async (doc, correlationCategories) => {
     doc.addPage();
     let currentY = 20;
     const pageWidth = doc.internal.pageSize.width;
@@ -197,7 +198,7 @@ const addSummarySection = async (doc, correlationCategories, startY) => {
     doc.setFont('helvetica', 'bold');
     doc.text('Análisis de Correlación',
         doc.internal.pageSize.width / 2, 20, { align: 'center' });
-    currentY += 15; 
+    currentY += 15;
 
     let isFirstCategory = true;
 
@@ -210,7 +211,7 @@ const addSummarySection = async (doc, correlationCategories, startY) => {
         {
             title: 'Variables con asociación mínima (0.25 - 0.5):',
             data: correlationCategories.asociacionMinima,
-            description: 'Estas variables pueden considerarse independientes para el análisis. No existe una relación significativa entre ellas, lo que sugiere que los cambios en una variable no afectan a la otra. Este tipo de variables son ideales para análisis independientes.'
+            description: 'Estas variables muestran una correlación muy débil. Aunque existe alguna relación entre ellas, es tan pequeña que puede considerarse prácticamente nula en términos prácticos. Esto sugiere que los cambios en una variable tienen un impacto mínimo en la otra.'
         },
         {
             title: 'Variables con asociación moderada (0.5 - 0.75):',
@@ -233,19 +234,20 @@ const addSummarySection = async (doc, correlationCategories, startY) => {
         if (category.data.length > 0) {
             if (!isFirstCategory) {
                 doc.addPage();
-                currentY = 20; 
+                currentY = 20;
             }
 
             doc.setFontSize(12);
             doc.setFont('helvetica', 'bold');
             doc.text(category.title, marginLeft, currentY);
-            currentY += lineHeight * 1.2; 
+            currentY += lineHeight * 1.2;
 
             doc.setFontSize(9);
             category.data.forEach(({ pair, cramer }) => {
                 currentY = checkNewPage(doc, currentY, lineHeight);
                 const pairText = `• ${pair}`;
-                const cramerText = `Índice de Cramer: ${cramer.toFixed(4)}`;
+                const displayValue = cramer.toFixed(1) === "0.0" ? "0.1" : cramer.toFixed(1);
+                const cramerText = `Índice de Cramer: ${cramer.toFixed(4)} (${displayValue})`;
                 doc.text(pairText, marginLeft + 6, currentY);
                 doc.text(cramerText, pageWidth - marginRight - 10, currentY, { align: 'right' });
                 currentY += lineHeight;
@@ -271,7 +273,7 @@ const addSummarySection = async (doc, correlationCategories, startY) => {
                     const pngBase64 = await svgToPngBase64(svg);
 
                     currentY = checkNewPage(doc, currentY, 280);
-                    
+
                     doc.setFontSize(11);
                     doc.setFont('helvetica', 'bold');
                     const graphTitle = `Grafo de ${category.title.toLowerCase().replace(':', '')}`;
@@ -303,16 +305,16 @@ const addSummarySection = async (doc, correlationCategories, startY) => {
 };
 
 const getEdgeColor = (cramer) => {
-    if (cramer >= 0.75) return '#E74C3C';    
-    if (cramer >= 0.5) return '#F39C12';     
-    if (cramer >= 0.25) return '#3498DB';    
-    return '#c2c2c2';                        
+    if (cramer >= 0.75) return '#E74C3C';
+    if (cramer >= 0.5) return '#F39C12';
+    if (cramer >= 0.25) return '#3498DB';
+    return '#c2c2c2';
 };
 
 const getEdgeWidth = (cramer) => {
-    if (cramer >= 0.75) return 4;
-    if (cramer >= 0.5) return 3;
-    if (cramer >= 0.25) return 2;
+    if (cramer >= 0.75) return 2.5;
+    if (cramer >= 0.5) return 2;
+    if (cramer >= 0.25) return 1.5;
     return 1;
 };
 
@@ -362,6 +364,64 @@ const generateCorrelationSummary = (reportData) => {
     });
 
     return categories;
+};
+
+const generateVariableRelationsSummary = (reportData) => {
+    const relationMap = new Map();
+
+    reportData.forEach(data => {
+        const { firstVariable, secondVariable, cramer } = data;
+
+        if (cramer >= 0.25) {
+            if (!relationMap.has(firstVariable)) {
+                relationMap.set(firstVariable, []);
+            }
+            relationMap.get(firstVariable).push({
+                relatedVar: secondVariable,
+                cramer
+            });
+
+            if (!relationMap.has(secondVariable)) {
+                relationMap.set(secondVariable, []);
+            }
+            relationMap.get(secondVariable).push({
+                relatedVar: firstVariable,
+                cramer
+            });
+        }
+    });
+
+    const summaries = [];
+    const generalSummaryParts = [];
+
+    relationMap.forEach((relations, variable) => {
+        if (relations.length > 0) {
+            relations.sort((a, b) => b.cramer - a.cramer);
+
+            const relationsList = relations.map(rel => {
+                const cramerDisplay = rel.cramer.toFixed(1) === "0.0" ? "0.1" : rel.cramer.toFixed(1);
+                return `${rel.relatedVar} (${cramerDisplay})`;
+            });
+
+            const singleVariableSummary = `• La variable ${variable} guarda relación con `;
+
+            if (relationsList.length === 1) {
+                generalSummaryParts.push(`${singleVariableSummary}${relationsList[0]}.`);
+            } else if (relationsList.length === 2) {
+                generalSummaryParts.push(`${singleVariableSummary}${relationsList[0]} y ${relationsList[1]}.`);
+            } else {
+                const lastRelation = relationsList.pop();
+                generalSummaryParts.push(`${singleVariableSummary}${relationsList.join(', ')} y ${lastRelation}.`);
+            }
+        }
+    });
+
+    if (generalSummaryParts.length > 0) {
+        const generalSummary = `Notar que:\n\n${generalSummaryParts.join('\n\n')} No se evidencia asociación para el resto de variables.`;
+        summaries.push(generalSummary);
+    }
+
+    return summaries;
 };
 
 export const generarInformeEtapa3 = async (files, etapaSeleccionada, onProgress) => {
@@ -486,7 +546,8 @@ export const generarInformeEtapa3 = async (files, etapaSeleccionada, onProgress)
             startY: 40,
             styles: {
                 fontSize: 7,
-                cellPadding: 1.5
+                cellPadding: 1.5,
+                halign: 'center'
             },
             columnStyles: {
                 0: { cellWidth: 35 },
@@ -509,9 +570,33 @@ export const generarInformeEtapa3 = async (files, etapaSeleccionada, onProgress)
             margin: { left: 15, right: 10 }
         });
 
-        const finalY = doc.previousAutoTable.finalY || 40;
         const correlationCategories = generateCorrelationSummary(reportData);
-        await addSummarySection(doc, correlationCategories, finalY + 20);
+        await addSummarySection(doc, correlationCategories);
+
+        doc.addPage();
+        let currentY = 20;
+
+        doc.setFontSize(16);
+        doc.setFont('helvetica', 'bold');
+        doc.text('Relaciones entre Variables',
+            doc.internal.pageSize.width / 2, currentY, { align: 'center' });
+        currentY += 20;
+
+        doc.setFontSize(10);
+        doc.setFont('helvetica', 'normal');
+        const summaries = generateVariableRelationsSummary(reportData);
+
+        summaries.forEach(summary => {
+            const textLines = doc.splitTextToSize(summary, doc.internal.pageSize.width - 28);
+
+            if (currentY + (textLines.length * 7) > doc.internal.pageSize.height - 20) {
+                doc.addPage();
+                currentY = 20;
+            }
+
+            doc.text(textLines, 14, currentY);
+            currentY += textLines.length * 7; 
+        });
 
         console.log('PDF generado exitosamente');
         onProgress(100);

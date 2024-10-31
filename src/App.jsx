@@ -14,6 +14,7 @@ import AccountCircleIcon from '@mui/icons-material/AccountCircle';
 
 import imagen1 from '../src/imagenes/imagen1.webp';
 import imagen2 from '../src/imagenes/imagen2.webp';
+import imagen3 from '../src/imagenes/imagen3.webp';
 
 function App() {
     const [currentStage, setCurrentStage] = useState(1);
@@ -41,6 +42,7 @@ function App() {
         setImages([
             imagen1,
             imagen2,
+            imagen3,
         ]);
     }, []);
 
@@ -185,9 +187,9 @@ function App() {
             <h1 className="title-container">{title}</h1>
 
             <button className="accountIcon">
-                <AccountCircleIcon />
+                <AccountCircleIcon sx={{ fontSize: '35px' }} />
             </button>
-            
+
             <button
                 className={`load-files-button ${dictionary ? 'dictionary-loaded' : ''} ${shakeElements.dictionary ? 'shake' : ''}`}
                 onClick={handleDictionaryAction}
