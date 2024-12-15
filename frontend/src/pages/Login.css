@@ -1,0 +1,99 @@
+.login-container {
+  background-color: #e6f0fc; /* Fondo azul claro */
+  height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-family: 'Arial', sans-serif;
+}
+
+.login-box {
+  background-color: #ffffff; /* Fondo blanco */
+  padding: 30px;
+  border-radius: 10px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+  width: 350px;
+  text-align: center;
+}
+
+.icon {
+  width: 80px;
+  height: 80px;
+  background-color: #004f9a; /* Azul oscuro */
+  border-radius: 50%;
+  margin: 0 auto 20px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  color: white;
+  font-size: 40px;
+}
+
+.login-title {
+  font-size: 24px;
+  font-weight: bold;
+  color: #004f9a; /* Azul oscuro */
+  margin-bottom: 20px;
+}
+
+.login-input {
+  width: 100%;
+  padding: 10px 5px;
+  margin: 10px 0;
+  border: 1px solid #cccccc;
+  border-radius: 5px;
+  font-size: 16px;
+  color: #004f9a; /* Azul oscuro */
+}
+
+.login-input::placeholder {
+  color: #7a7a7a; /* Color placeholder */
+}
+
+.login-input:focus {
+  outline: none;
+  border-color: #004f9a; /* Azul oscuro */
+  box-shadow: 0 0 5px rgba(0, 79, 154, 0.5);
+}
+
+.login-button {
+  width: 100%;
+  padding: 10px;
+  margin-top: 20px;
+  background-color: #004f9a; /* Azul oscuro */
+  color: white;
+  font-size: 16px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.login-button:hover {
+  background-color: #003a73; /* Azul más oscuro */
+}
+
+.login-error {
+  color: #d32f2f; /* Rojo */
+  font-size: 14px;
+  margin-top: 10px;
+}
+
+.checkbox-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 14px;
+  margin-top: 10px;
+}
+
+.checkbox-container a {
+  color: #004f9a; /* Azul oscuro */
+  text-decoration: none;
+  transition: color 0.3s ease;
+}
+
+.checkbox-container a:hover {
+  color: #003a73; /* Azul más oscuro */
+  text-decoration: underline;
+}
