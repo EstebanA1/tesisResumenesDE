@@ -56,23 +56,28 @@ export const generarInformeEtapa2 = async (files, etapaSeleccionada, onProgress)
             head: [['Rangos', 'Pesos']],
             body: tabla.datos,
             startY: yPos,
-            margin: { bottom: 30 },
             styles: { cellPadding: 1.5, fontSize: 8 },
         });
 
         yPos = doc.lastAutoTable.finalY;
+        const espacioNecesarioGrafico = 110; 
+        const espacioDisponible = doc.internal.pageSize.height - yPos;
+
+        if (espacioDisponible < espacioNecesarioGrafico) {
+            doc.addPage();
+            yPos = 30;
+        }
+
         generarGrafico(doc, tabla.datos, yPos);
-        const espacioDisponible = doc.internal.pageSize.height - (yPos + 110 + 20);
+        yPos += espacioNecesarioGrafico;
 
         doc.setFontSize(9);
         const resumenClassicoLines = doc.splitTextToSize(tabla.resumen.resumenClasico, 180);
         const alturaResumen = resumenClassicoLines.length * 5;
 
-        if (alturaResumen > espacioDisponible + 10) {
+        if (doc.internal.pageSize.height - yPos < alturaResumen + 20) {
             doc.addPage();
             yPos = 30;
-        } else {
-            yPos += 110;
         }
 
         doc.setFontSize(14);
@@ -282,7 +287,7 @@ const procesarLineas = (lines, diccionario) => {
                 return null;
             }).filter(item => item !== null);
 
-            const resumenGenerado = generarResumen(datos, titulo);
+            const resumenGenerado = generarResumen(datos, titulo, parametro); 
 
             tablas.push({
                 titulo,
@@ -297,11 +302,77 @@ const procesarLineas = (lines, diccionario) => {
     return tablas;
 };
 
-const generarResumen = (datos, titulo) => {
+const generarResumen = (datos, titulo, parametro) => {
     const cambiosClasicos = generarCambiosClasicos(datos);
-    const resumenClasico = generarResumenClasico(cambiosClasicos, titulo);
+    const resumenClasico = generarResumenClasico(cambiosClasicos, titulo, parametro); 
 
     return { resumenClasico };
+};
+
+const generarResumenClasico = (cambios, titulo, datosATratar) => { 
+    let descripcion = `En la ${titulo}, analizando ${datosATratar}, observamos que `;
+
+    const cambiosAgrupados = cambios.reduce((acc, cambio) => {
+        if (!acc[cambio.efecto]) {
+            acc[cambio.efecto] = [];
+        }
+        acc[cambio.efecto].push(cambio.rango);
+        return acc;
+    }, {});
+
+    const ordenEfectos = [
+        "favorece el cambio",
+        "no afecta el cambio",
+        "repele el cambio"
+    ];
+
+    const efectosPresentes = ordenEfectos.filter(efecto => cambiosAgrupados[efecto]);
+
+    efectosPresentes.forEach((efecto, index) => {
+        const rangos = cambiosAgrupados[efecto];
+        let descripcionEfecto;
+
+        switch (efecto) {
+            case "favorece el cambio":
+                descripcionEfecto = "el cambio es claramente favorable, lo que indica una tendencia positiva";
+                break;
+            case "no afecta el cambio":
+                descripcionEfecto = "el cambio se mantiene en una posición neutral, sugiriendo que los efectos son mínimos o poco significativos";
+                break;
+            case "repele el cambio":
+                descripcionEfecto = "se evidencia una clara repulsión al cambio, lo que refleja una resistencia significativa";
+                break;
+        }
+
+        const rangosAgrupados = agruparRangosConsecutivos(rangos);
+        
+        let rangoDescripcion = rangosAgrupados.map((grupo, i, arr) => {
+            if (i === 0) {
+                return `en los rangos de ${grupo}`;
+            }
+            if (i === arr.length - 1) {
+                return `y ${grupo}`;
+            }
+            return grupo;
+        }).join(', ');
+
+        if (index === 0) {
+            descripcion += `${rangoDescripcion}, ${descripcionEfecto}. `;
+        } else if (index === efectosPresentes.length - 1) {
+            descripcion += `Finalmente, ${rangoDescripcion}, ${descripcionEfecto}.`;
+        } else {
+            descripcion += `Por otra parte, ${rangoDescripcion}, ${descripcionEfecto}. `;
+        }
+    });
+
+    return descripcion;
+};
+
+const agruparRangosConsecutivos = (rangos) => {
+    return rangos.map(rango => {
+        const [inicio, fin] = rango.split(':');
+        return `${inicio} hasta ${fin}`;
+    });
 };
 
 const generarCambiosClasicos = (datos) => {
@@ -325,59 +396,6 @@ const generarCambiosClasicos = (datos) => {
         efecto: efectoActual
     });
     return cambios;
-};
-
-const generarResumenClasico = (cambios, titulo) => {
-    let descripcion = `En la ${titulo}, observamos que `;
-
-
-    const cambiosAgrupados = cambios.reduce((acc, cambio) => {
-        if (!acc[cambio.efecto]) {
-            acc[cambio.efecto] = [];
-        }
-        acc[cambio.efecto].push(cambio.rango);
-        return acc;
-    }, {});
-
-    const efectos = Object.keys(cambiosAgrupados);
-    
-    efectos.forEach((efecto, index) => {
-        const rangos = cambiosAgrupados[efecto];
-        let descripcionEfecto;
-
-        switch (efecto) {
-            case "favorece el cambio":
-                descripcionEfecto = "el cambio es claramente favorable, lo que indica una tendencia positiva";
-                break;
-            case "no afecta el cambio":
-                descripcionEfecto = "el cambio se mantiene en una posición neutral, sugiriendo que los efectos son mínimos o poco significativos para promover variaciones importantes";
-                break;
-            case "repele el cambio":
-                descripcionEfecto = "se evidencia una clara repulsión al cambio, lo que refleja una resistencia fuerte a cualquier tipo de alteración significativa";
-                break;
-        }
-
-        let rangoDescripcion = rangos.map(rango => {
-            const [inicio, fin] = rango.split(':');
-            return `${inicio} hasta ${fin}`;
-        }).join(' y desde ');
-
-        if (rangos.length > 1) {
-            rangoDescripcion = `desde ${rangoDescripcion}`;
-        } else {
-            rangoDescripcion = `en el rango de ${rangoDescripcion}`;
-        }
-
-        if (index === 0) {
-            descripcion += `${rangoDescripcion}, ${descripcionEfecto}. `;
-        } else if (index === efectos.length - 1) {
-            descripcion += `Finalmente, ${rangoDescripcion}, ${descripcionEfecto}.`;
-        } else {
-            descripcion += `Luego, ${rangoDescripcion}, ${descripcionEfecto}. `;
-        }
-    });
-
-    return descripcion;
 };
 
 const getEfecto = (pesoNum) => {
