@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import api from '../../axiosConfig'; // Configuración de Axios
+import api from '../../axiosConfig';
 import { useNavigate } from 'react-router-dom';
-import './Login.css'; // Opcional: Estilos personalizados
+import './Login.css';
 
 const Login = ({ setIsAuthenticated }) => {
   const [email, setEmail] = useState('');
@@ -9,7 +9,6 @@ const Login = ({ setIsAuthenticated }) => {
   const [error, setError] = useState('');
   const navigate = useNavigate();
 
-  // Confirmar que setIsAuthenticated está llegando correctamente
   console.log('setIsAuthenticated:', typeof setIsAuthenticated);
 
   const handleLogin = async (e) => {
@@ -21,7 +20,7 @@ const Login = ({ setIsAuthenticated }) => {
       const response = await api.post('/login', { email, password });
       console.log('Respuesta del servidor:', response.data);
   
-      setIsAuthenticated(true); // Si el login es exitoso, cambia el estado
+      setIsAuthenticated(true);
       navigate('/home');
     } catch (err) {
       console.error('Error en la solicitud:', err.response?.data || err.message);

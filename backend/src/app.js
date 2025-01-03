@@ -11,10 +11,8 @@ import { fileURLToPath } from 'url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Iniciando el servidor
 const app = express();
 
-// Middleware
 app.use(express.json());
 app.use(cors({
     origin: "http://localhost:5173",
@@ -24,9 +22,8 @@ app.use(cookieParser());
 
 // Configuración de archivos estáticos
 const staticPath = path.join(__dirname, 'public');
-app.use('/static', express.static(staticPath)); // Servir la carpeta `public`
+app.use('/static', express.static(staticPath)); 
 
-// Registrar rutas
 app.use("/api", authRoutes);
 app.use(clientRoutes);
 app.use('/api/reports', reportRoutes);

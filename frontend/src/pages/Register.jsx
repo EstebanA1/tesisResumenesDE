@@ -14,35 +14,31 @@ const Register = () => {
   const handleRegister = async (e) => {
     e.preventDefault();
 
-    // Validaciones básicas en el frontend
     if (password !== confirmPassword) {
       setError('Las contraseñas no coinciden');
       return;
     }
 
-    setError(''); // Limpiar errores previos
-    setSuccessMessage(''); // Limpiar mensajes de éxito
-    setIsLoading(true); // Inicia indicador de carga
+    setError('');
+    setSuccessMessage(''); 
+    setIsLoading(true); 
 
     try {
-      // Solicitud al backend
       await api.post('/register', {
         username,
         email,
         password,
       });
 
-      // Mostrar mensaje de éxito y redirigir al login
       setSuccessMessage('Registro exitoso. Redirigiendo al inicio de sesión...');
       setTimeout(() => {
-        window.location.href = '/tesisResumenesDE/'; // Redirige al login
+        window.location.href = '/tesisResumenesDE/'; 
       }, 3000);
     } catch (err) {
-      // Manejo de errores
       console.error(err);
       setError(err.response?.data?.[0] || 'Error al registrarse. Intenta nuevamente.');
     } finally {
-      setIsLoading(false); // Finaliza el indicador de carga
+      setIsLoading(false);  
     }
   };
 

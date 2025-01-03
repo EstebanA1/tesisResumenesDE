@@ -17,13 +17,9 @@ export const registro = async(req, res)=>{
         const nuevoUsuario = new User({
             username, email, password: passwordHash
         })
-        //logica es para guardar este documento en la base de datos
         const usuarioGuardado = await nuevoUsuario.save();
-        //utilizamos el token
         const token = await createAccessToken({id:usuarioGuardado._id})
-        //crear una cookie en el navegador o el cliente con express
         res.cookie("token", token)
-        //respuesta al cliente
         res.json({
             email: usuarioGuardado.email,
             username: usuarioGuardado.username,

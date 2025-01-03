@@ -66,7 +66,7 @@ function Home() {
     const handleLogout = async () => {
         try {
             await api.post("/logout");
-            navigate("/login", { replace: true }); // Redirige y limpia el historial
+            navigate("/login", { replace: true }); 
         } catch (err) {
             console.error("Error al cerrar sesión:", err);
         }
@@ -153,7 +153,6 @@ function Home() {
 
             setPdfPreviewUrl(url);
 
-            // Llamada al backend para guardar el informe
             const response = await fetch('http://localhost:3000/api/reports', {
                 method: 'POST',
                 headers: {
@@ -164,7 +163,7 @@ function Home() {
                     reportName: `${etapaSeleccionada.name} Report`,
                     reportUrl: url,
                 }),
-                credentials: 'include', // Esto envía las cookies automáticamente
+                credentials: 'include',
             });
 
 

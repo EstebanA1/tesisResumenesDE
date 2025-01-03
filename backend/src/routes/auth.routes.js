@@ -6,7 +6,6 @@ import { loginSchema, registerSchema } from '../schemas/user.schema.js';
 
 const router = Router();
 
-//peticiones
 router.post('/register', validateSchema(registerSchema), registro)
 router.post('/login', validateSchema(loginSchema), login)
 router.post('/logout', logout)

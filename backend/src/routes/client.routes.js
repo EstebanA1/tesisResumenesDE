@@ -5,11 +5,8 @@ import { createClient, deleteClient, getClient, getClientOne, updteClient } from
 
 const router = Router()
 
-//definir rutas
 router.get('/api/client', authRequired, getClient);
 router.post('/api/client', authRequired, createClient);
-
-//definir rutas con id
 router.get('/api/client/:id', authRequired, getClientOne)
 router.delete('/api/client/:id', authRequired, deleteClient)
 router.put('/api/client/:id', authRequired, updteClient)

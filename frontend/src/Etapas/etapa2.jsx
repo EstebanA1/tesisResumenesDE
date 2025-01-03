@@ -117,11 +117,7 @@ const generarGrafico = (doc, datos, yPos) => {
 
         if (max <= 20) return 0.7;
         if (max <= 100) return 5;
-        // if (max <= 500) return 5;
-        // if (max <= 1000) return 10;
-        // if (max <= 5000) return 50;
         if (max <= 10000) return 50;
-        // if (max <= 30000) return 100;
         return Math.pow(10, Math.floor(Math.log10(range / 100)));
     };
 

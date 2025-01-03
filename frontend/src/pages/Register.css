@@ -1,6 +1,6 @@
 .register-container {
-  background-color: #e6f0fc; /* Fondo azul claro */
-  height: 100vh;
+  background-color: #e6f0fc; 
+  height: 89vh;
   display: flex;
   justify-content: center;
   align-items: center;
@@ -8,7 +8,7 @@
 }
 
 .register-box {
-  background-color: #ffffff; /* Fondo blanco */
+  background-color: #ffffff; 
   padding: 30px;
   border-radius: 10px;
   box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.2);
@@ -17,7 +17,7 @@
 }
 
 .register-box h2 {
-  color: #004f9a; /* Azul oscuro */
+  color: #004f9a;
   font-size: 24px;
   margin-bottom: 20px;
 }
@@ -29,16 +29,16 @@
   border: 1px solid #cccccc;
   border-radius: 5px;
   font-size: 16px;
-  color: #004f9a; /* Azul oscuro */
+  color: #004f9a; 
 }
 
 .register-box input::placeholder {
-  color: #7a7a7a; /* Color placeholder */
+  color: #7a7a7a; 
 }
 
 .register-box input:focus {
   outline: none;
-  border-color: #004f9a; /* Azul oscuro */
+  border-color: #004f9a; 
   box-shadow: 0 0 5px rgba(0, 79, 154, 0.5);
 }
 
@@ -46,7 +46,7 @@
   width: 100%;
   padding: 10px;
   margin-top: 10px;
-  background-color: #004f9a; /* Azul oscuro */
+  background-color: #004f9a; 
   color: white;
   font-size: 16px;
   border: none;
@@ -56,23 +56,23 @@
 }
 
 .register-box button:hover {
-  background-color: #003a73; /* Azul más oscuro */
+  background-color: #003a73;
 }
 
 .register-box p {
   font-size: 14px;
-  color: #555555; /* Texto secundario */
+  color: #555555; 
   margin-top: 10px;
 }
 
 .register-box p a {
-  color: #004f9a; /* Azul oscuro */
+  color: #004f9a; 
   text-decoration: none;
   font-weight: bold;
   transition: color 0.3s ease;
 }
 
 .register-box p a:hover {
-  color: #003a73; /* Azul más oscuro */
+  color: #003a73; 
   text-decoration: underline;
 }

@@ -7,15 +7,15 @@ const ReportSchema = new mongoose.Schema({
         required: true,
     },
     stage: {
-        type: String, // Etapa del informe
+        type: String,
         required: true,
     },
     reportName: {
-        type: String, // Nombre del informe
+        type: String, 
         required: true,
     },
     reportUrl: {
-        type: String, // URL o ruta donde se almacena el informe
+        type: String, 
         required: true,
     },
     createdAt: {
